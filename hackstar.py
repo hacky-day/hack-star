@@ -9,6 +9,7 @@ import time
 
 from flask import Flask, g, request, redirect, send_from_directory, render_template
 from shazamio import Shazam
+from yt_dlp import YoutubeDL
 
 DATABASE = os.environ.get("HACKSTAR_DATABASE", "hackstar.db")
 DATA_DIR = os.environ.get("HACKSTAR_DATA_DIR", "data")
@@ -84,6 +85,16 @@ async def shazam(audio_file):
     print("artist", artist)
 
     return title, artist, release_date, cover
+
+
+def youtube_playlist_links(url):
+    ydl_opts = {
+        "extract_flat": "in_playlist",  # Extract video URLs only
+        "quiet": True,  # Suppress output
+    }
+    with YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        return [entry["url"] for entry in info.get("entries", [])]
 
 
 def download_wroker():
@@ -211,16 +222,26 @@ def home():
 @app.route("/upload", methods=["POST"])
 def upload():
     url = request.form.get("url")
+    playlist = request.form.get("playlist")
+
+    urls = youtube_playlist_links(url) if playlist else [url]
 
     db = get_db()
     cursor = db.cursor()
 
-    song_id = random.randint(100000000, 999999999)
-    cursor.execute("insert into song (id) values (?)", (song_id,))
-    db.commit()  # TODO: Handle primary key violation
+    for url in urls:
+        print(f"Adding URL: {url}")
 
-    cursor.execute("insert into job values (?, ?, ?, ?)", (song_id, url, "", "waiting"))
-    db.commit()
+        song_id = random.randint(100000000, 999999999)
+        cursor.execute("insert into song (id) values (?)", (song_id,))
+        db.commit()  # TODO: Handle primary key violation
+
+        cursor.execute(
+            "insert into job values (?, ?, ?, ?)", (song_id, url, "", "waiting")
+        )
+        db.commit()
+
+    cursor.close()
 
     return redirect("/static/upload.html", code=302)
 
@@ -279,4 +300,4 @@ def next_song(game_id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(port=8000)
