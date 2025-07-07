@@ -1,5 +1,7 @@
 # hack·star
 
+Self-hosted music quiz game.
+ 
 Get started:
 
 ```sh
@@ -12,7 +14,7 @@ Get started:
 Use `docker` or `podman`:
 
 ```sh
-podman run -it --rm -p 127.0.0.1:8000:8000 ghcr.io/...:main
+podman run -it --rm -p 127.0.0.1:8000:8000 ghcr.io/hacky-day/hack-star:main
 ```
 
 A `docker-compose.yml` with reverse proxy and HTTPS with valid TLS vertificate:
@@ -20,10 +22,11 @@ A `docker-compose.yml` with reverse proxy and HTTPS with valid TLS vertificate:
 ```yml
 services:
   hackstar:
-    image: ghcr.io/...:main
+    image: ghcr.io/hacky-day/hack-star:main
     restart: always
     volumes:
-      - /....db:/app/hack-star.db
+      - ./hackstar.db:/app/hackstar.db
+      - ./data:/app/data
     networks:
       - hackstar
 
