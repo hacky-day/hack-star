@@ -10,8 +10,8 @@ import time
 from flask import Flask, g, request, redirect, send_from_directory, render_template
 from shazamio import Shazam
 
-DATABASE = os.environ.get("HACK_STAR_DATABASE", "hackstar.db")
-DATA_DIR = os.environ.get("DATA_DIR", "data")
+DATABASE = os.environ.get("HACKSTAR_DATABASE", "hackstar.db")
+DATA_DIR = os.environ.get("HACKSTAR_DATA_DIR", "data")
 
 __SQL_CREATE = [
     """
