@@ -282,7 +282,7 @@ def next_song(game_id):
     # TODO: Handle no songs left
     songs = list(data)
     if not songs:
-        return "No songs left", 404
+        return redirect("/static/end.html", code=302)
     song = songs[0]
     song_id, title, artist, release_date, cover = song
     hex_id = hex(song_id)[2:]
