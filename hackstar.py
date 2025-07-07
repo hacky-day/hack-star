@@ -274,6 +274,7 @@ def next_song(game_id):
             select song_id from game
             where id = ?
             and song_id = s.id)
+        and s.title not null
         order by random()
         limit 1""",
         (game_id,),
