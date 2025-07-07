@@ -1,7 +1,7 @@
 # hack·star
 
 Self-hosted music quiz game.
- 
+
 Get started:
 
 ```sh
@@ -24,6 +24,9 @@ services:
   hackstar:
     image: ghcr.io/hacky-day/hack-star:main
     restart: always
+    #environment:
+    #  HACKSTAR_DATABASE: hackstar.db
+    #  HACKSTAR_DATA_DIR: data
     volumes:
       - ./hackstar.db:/app/hackstar.db
       - ./data:/app/data
