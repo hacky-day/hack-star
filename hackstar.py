@@ -60,15 +60,12 @@ def db_init():
 async def shazam(audio_file):
     shazam = Shazam()
     out = await shazam.recognize(audio_file)
-    with open("data.json", "w") as f:
-        json.dump(out, f)
     track = out["track"]
 
     title = track["title"]
     print("title", title)
 
     release_date = track.get("releasedate")
-    print("release_date", release_date)
     if release_date:
         release_date = int(release_date[-4:])
     else:
@@ -83,8 +80,6 @@ async def shazam(audio_file):
 
     artist_id = int(track["artists"][0]["adamid"])
     about_artist = await shazam.artist_about(artist_id)
-    with open("artist.json", "w") as f:
-        json.dump(about_artist, f)
     artist = about_artist["data"][0]["attributes"]["name"]
     print("artist", artist)
 
