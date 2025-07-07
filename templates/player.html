@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang=en>
+<head>
+<meta http-equiv=content-type content="text/html; charset=utf-8" />
+<meta name=viewport content="width=device-width, initial-scale=1">
+<link rel=stylesheet type=text/css href=/static/index.css />
+
+<title>hacky·star</title>
+<script>
+function play() {
+  document.querySelector('audio').play();
+  document.getElementById('play').style.display = 'none';
+  document.getElementById('questionmark').style.display = 'inline-flex';
+}
+function reveal() {
+  document.getElementById('questionmark').style.display = 'none';
+  document.getElementById('coverart').style.display = 'inline-flex';
+  document.getElementById('metadata').style.display = 'block';
+}
+</script>
+</head>
+<body>
+
+	<header class=top>
+		<a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
+    hack·star
+	</header>
+
+	<main>
+      <div id=play class=cover onclick='play()'>
+        ⏵
+      </div>
+      <div id=questionmark class=cover onclick='reveal()'>
+        ?
+      </div>
+      <div id=coverart class=cover>
+        <img src={{ cover }} alt='Cover' />
+      </div>
+      <div>
+        <audio controls>
+          <source src="/song/{{ song_id }}" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+
+      <div id=metadata>
+        <div id=release_date>{{ release_date }}</div>
+        <div id=title>{{ title }}</div>
+        <div id=artist>{{ artist }}</div>
+
+        <button onclick='window.location.reload()'>Continue →</button>
+      </div>
+	</main>
+
+</body>
+</html>

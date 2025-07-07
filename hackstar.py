@@ -1,0 +1,287 @@
+import asyncio
+import json
+import multiprocessing
+import os
+import random
+import sqlite3
+import subprocess
+import time
+
+from flask import Flask, g, request, redirect, send_from_directory, render_template
+from shazamio import Shazam
+
+DATABASE = os.environ.get("HACK_STAR_DATABASE", "hackstar.db")
+DATA_DIR = os.environ.get("DATA_DIR", "data")
+
+__SQL_CREATE = [
+    """
+    CREATE TABLE IF NOT EXISTS version(
+        version unsigned int primary key
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS song(
+        id unsigned int primary key,
+        title varchar(255),
+        artist varchar(255),
+        release_date unsigned int,
+        cover varchar(255)
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS game(
+        id unsigned int not null,
+        song_id unsigned int,
+        PRIMARY KEY (id, song_id),
+        FOREIGN KEY (song_id) REFERENCES song(id) ON DELETE CASCADE
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS job(
+        song_id unsigned int,
+        url varchar(255) NOT NULL,
+        output text NOT NULL,
+        state varchar(16) NOT NULL,
+        FOREIGN KEY (song_id) REFERENCES song(id) ON DELETE CASCADE
+    )""",
+]
+
+
+def db_init():
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
+    for create_table in __SQL_CREATE:
+        cur.execute(create_table)
+    # Insert database version
+    data = list(cur.execute("select version from version"))
+    if not data:
+        cur.execute("insert into version values(?)", (0,))
+        con.commit()
+    con.close()
+
+
+async def shazam(audio_file):
+    shazam = Shazam()
+    out = await shazam.recognize(audio_file)
+    with open("data.json", "w") as f:
+        json.dump(out, f)
+    track = out["track"]
+
+    title = track["title"]
+    print("title", title)
+
+    release_date = track.get("releasedate")
+    print("release_date", release_date)
+    if release_date:
+        release_date = int(release_date[-4:])
+    else:
+        metadata = track.get("sections", [{}])[0].get("metadata")
+        for data in metadata:
+            if data["title"] == "Released":
+                release_date = int(data["text"])
+    print("release_date", release_date)
+
+    cover = track.get("images", {}).get("coverart")
+    print("cover", cover)
+
+    artist_id = int(track["artists"][0]["adamid"])
+    about_artist = await shazam.artist_about(artist_id)
+    with open("artist.json", "w") as f:
+        json.dump(about_artist, f)
+    artist = about_artist["data"][0]["attributes"]["name"]
+    print("artist", artist)
+
+    return title, artist, release_date, cover
+
+
+def download_wroker():
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
+    while True:
+        data = list(
+            cur.execute("select song_id, url from job where state = 'waiting' limit 1")
+        )
+        if data:
+            print(data)
+            song_id, url = data[0]
+            # Mark job as running
+            cur.execute(
+                "update job set state = 'downloading' where song_id = ?", (song_id,)
+            )
+            con.commit()
+
+            # Download from YouTube
+            hex_id = hex(song_id)[2:]
+            command = (
+                "yt-dlp",
+                "--format",
+                "234",
+                "--no-playlist",
+                "--output",
+                f"{hex_id}.mp4",
+                url,
+            )
+            result = subprocess.run(
+                command,
+                text=True,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=DATA_DIR,
+            )
+            output = result.stdout
+            print(output)
+            cur.execute(
+                "update job set state = 'running', output = ? where song_id = ?",
+                (output, song_id),
+            )
+            con.commit()
+
+            # Convert file
+            command = [
+                "ffmpeg",
+                "-i",
+                f"{hex_id}.mp4",
+                "-movflags",
+                "faststart",
+                "-c:a",
+                "copy",
+                "-vn",
+                f"{hex_id}.m4a",
+            ]
+            result = subprocess.run(
+                command,
+                text=True,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=DATA_DIR,
+            )
+            output = result.stdout
+            print(output)
+
+            # Get data from Shazam
+            loop = asyncio.get_event_loop()
+            audio_file = f"{DATA_DIR}/{hex_id}.m4a"
+            title, artist, release_date, cover = loop.run_until_complete(
+                shazam(audio_file)
+            )
+            print("Shazam:", title, artist, release_date, cover)
+
+            # Insert data in song create_table
+            cur.execute(
+                "update song set title = ?, artist = ?, release_date = ?, cover = ? where id = ?",
+                (title, artist, release_date, cover, song_id),
+            )
+            con.commit()
+
+            # mark job as finished
+            cur.execute(
+                "update job set state = 'finished', output = ? where song_id = ?",
+                (output, song_id),
+            )
+            con.commit()
+
+        time.sleep(5)
+
+
+def app_init():
+    db_init()
+    print("Starting worker")
+    process = multiprocessing.Process(target=download_wroker)
+    process.start()
+    print("Starting web application")
+    return Flask(__name__)
+
+
+app = app_init()
+
+
+def get_db():
+    db = getattr(g, "_database", None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
+
+
+@app.teardown_appcontext
+def close_connection(_):
+    db = getattr(g, "_database", None)
+    if db is not None:
+        db.close()
+
+
+@app.route("/")
+def home():
+    return redirect("/static/index.html", code=302)
+
+
+@app.route("/upload", methods=["POST"])
+def upload():
+    url = request.form.get("url")
+
+    db = get_db()
+    cursor = db.cursor()
+
+    song_id = random.randint(100000000, 999999999)
+    cursor.execute("insert into song (id) values (?)", (song_id,))
+    db.commit()  # TODO: Handle primary key violation
+
+    cursor.execute("insert into job values (?, ?, ?, ?)", (song_id, url, "", "waiting"))
+    db.commit()
+
+    return redirect("/static/upload.html", code=302)
+
+
+@app.route("/song/<song_id>")
+def song(song_id):
+    return send_from_directory(DATA_DIR, f"{song_id}.m4a", mimetype="audio/x-m4a")
+
+
+@app.route("/game")
+def new_game():
+    db = get_db()
+    cursor = db.cursor()
+
+    game_id = random.randint(100000000, 999999999)
+    cursor.execute("insert into game values (?, ?)", (game_id, None))
+    db.commit()  # TODO: Handle primary key violation
+
+    return redirect(f"/game/{game_id}", code=302)
+
+
+@app.route("/game/<game_id>")
+def next_song(game_id):
+    db = get_db()
+    cur = db.cursor()
+    data = cur.execute(
+        """
+        select * from song s
+        where not exists(
+            select song_id from game
+            where id = ?
+            and song_id = s.id)
+        order by random()
+        limit 1""",
+        (game_id,),
+    )
+    # TODO: Handle no songs left
+    songs = list(data)
+    if not songs:
+        return "No songs left", 404
+    song = songs[0]
+    song_id, title, artist, release_date, cover = song
+    hex_id = hex(song_id)[2:]
+    # mark song as listened
+    cur.execute("insert into game values (?, ?)", (game_id, song_id))
+    db.commit()
+    return render_template(
+        "player.html",
+        game_id=game_id,
+        song_id=hex_id,
+        title=title,
+        artist=artist,
+        release_date=release_date,
+        cover=cover,
+    )
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
