@@ -96,7 +96,8 @@ div.cover img {
   width: 100%;
 }
 
-#metadata {
+#metadata, #reveal {
+  margin-top: 25px;
   display: none;
 }
 
