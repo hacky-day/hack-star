@@ -11,7 +11,7 @@ from flask import Flask, g, request, redirect, send_from_directory, render_templ
 from shazamio import Shazam
 from yt_dlp import YoutubeDL
 
-DATABASE = os.environ.get("HACKSTAR_DATABASE", "hackstar.db")
+DATABASE = os.environ.get("HACKSTAR_DATABASE", "db/hackstar.db")
 DATA_DIR = os.environ.get("HACKSTAR_DATA_DIR", "data")
 
 __SQL_CREATE = [

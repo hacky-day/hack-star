@@ -20,7 +20,7 @@ COPY hackstar.py /app/hackstar.py
 COPY static /app/static
 COPY templates /app/templates
 WORKDIR /app
-RUN mkdir /app/data
+RUN mkdir /app/data /app/db
 
 COPY --from=unzipper /ffmpeg-7.0.2-amd64-static/ffmpeg /usr/bin/ffmpeg
 
