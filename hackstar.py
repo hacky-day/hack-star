@@ -1,5 +1,4 @@
 import asyncio
-import json
 import multiprocessing
 import os
 import random
@@ -35,10 +34,17 @@ __SQL_CREATE = [
         FOREIGN KEY (song_id) REFERENCES song(id) ON DELETE CASCADE
     )""",
     """
-    CREATE TABLE IF NOT EXISTS job(
+    CREATE TABLE IF NOT EXISTS job_url(
         song_id unsigned int,
         url varchar(255) NOT NULL,
         output text NOT NULL,
+        state varchar(16) NOT NULL,
+        FOREIGN KEY (song_id) REFERENCES song(id) ON DELETE CASCADE
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS job_file(
+        song_id unsigned int,
+        filename varchar(255) NOT NULL,
         state varchar(16) NOT NULL,
         FOREIGN KEY (song_id) REFERENCES song(id) ON DELETE CASCADE
     )""",
@@ -97,24 +103,99 @@ def youtube_playlist_links(url):
         return [entry["url"] for entry in info.get("entries", [])]
 
 
-def download_wroker():
+def gen_hex_id(id: int) -> str:
+    return hex(id)[2:]
+
+
+def file_worker():
     con = sqlite3.connect(DATABASE)
     cur = con.cursor()
     while True:
         data = list(
-            cur.execute("select song_id, url from job where state = 'waiting' limit 1")
+            cur.execute(
+                "select song_id, filename from job_file where state = 'waiting' limit 1"
+            )
+        )
+        # no entry to process sleep for 5 seconds
+        if not data:
+            time.sleep(5)
+            continue
+        print(data)
+        song_id, filename = data[0]
+        # Mark job_file as running
+        cur.execute(
+            "update job_file set state = 'running' where song_id = ?",
+            (song_id,),
+        )
+        con.commit()
+
+        # Convert file
+        hex_id = gen_hex_id(song_id)
+        command = [
+            "ffmpeg",
+            "-i",
+            filename,
+            "-movflags",
+            "faststart",
+            "-c:a",
+            "aac",
+            "-vn",
+            f"{hex_id}.m4a",
+        ]
+        result = subprocess.run(
+            command,
+            text=True,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=DATA_DIR,
+        )
+        print(result.stdout)
+
+        # Get data from Shazam
+        loop = asyncio.get_event_loop()
+        audio_file = f"{DATA_DIR}/{hex_id}.m4a"
+        title, artist, release_date, cover = loop.run_until_complete(shazam(audio_file))
+        print("Shazam:", title, artist, release_date, cover)
+
+        # Insert data in song create_table
+        cur.execute(
+            "update song set title = ?, artist = ?, release_date = ?, cover = ? where id = ?",
+            (title, artist, release_date, cover, song_id),
+        )
+        con.commit()
+
+        # mark job_url as finished
+        cur.execute(
+            "update job_file set state = 'finished' where song_id = ?",
+            (song_id,),
+        )
+        con.commit()
+
+        # remove temporary file
+        os.remove(f"{DATA_DIR}/{filename}")
+
+
+def download_worker():
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
+    while True:
+        data = list(
+            cur.execute(
+                "select song_id, url from job_url where state = 'waiting' limit 1"
+            )
         )
         if data:
             print(data)
             song_id, url = data[0]
-            # Mark job as running
+            # Mark job_url as running
             cur.execute(
-                "update job set state = 'downloading' where song_id = ?", (song_id,)
+                "update job_url set state = 'downloading' where song_id = ?", (song_id,)
             )
             con.commit()
 
             # Download from YouTube
-            hex_id = hex(song_id)[2:]
+            hex_id = gen_hex_id(song_id)
             command = (
                 "yt-dlp",
                 "--format",
@@ -135,7 +216,7 @@ def download_wroker():
             output = result.stdout
             print(output)
             cur.execute(
-                "update job set state = 'running', output = ? where song_id = ?",
+                "update job_url set state = 'running', output = ? where song_id = ?",
                 (output, song_id),
             )
             con.commit()
@@ -178,9 +259,9 @@ def download_wroker():
             )
             con.commit()
 
-            # mark job as finished
+            # mark job_url as finished
             cur.execute(
-                "update job set state = 'finished', output = ? where song_id = ?",
+                "update job_url set state = 'finished', output = ? where song_id = ?",
                 (output, song_id),
             )
             con.commit()
@@ -191,8 +272,8 @@ def download_wroker():
 def app_init():
     db_init()
     print("Starting worker")
-    process = multiprocessing.Process(target=download_wroker)
-    process.start()
+    multiprocessing.Process(target=download_worker).start()
+    multiprocessing.Process(target=file_worker).start()
     print("Starting web application")
     return Flask(__name__)
 
@@ -224,10 +305,30 @@ def upload():
     url = request.form.get("url")
     playlist = request.form.get("playlist")
 
-    urls = youtube_playlist_links(url) if playlist else [url]
+    urls = youtube_playlist_links(url) if playlist else [url] if url else []
 
     db = get_db()
     cursor = db.cursor()
+
+    # potentially import uploaded files
+    for key in request.files:
+        file_list = request.files.getlist(key)
+        for file in file_list:
+            if not file.filename:
+                continue
+            print(f"Adding file: {file.filename}")
+            song_id = random.randint(100000000, 999999999)
+            hex_id = gen_hex_id(song_id)
+            cursor.execute("insert into song (id) values (?)", (song_id,))
+            db.commit()  # TODO: Handle primary key violation
+
+            filename = f"{hex_id}.tmp"
+            file.save(os.path.join(DATA_DIR, filename))
+            cursor.execute(
+                "insert into job_file values (?, ?, ?)",
+                (song_id, filename, "waiting"),
+            )
+            db.commit()
 
     for url in urls:
         print(f"Adding URL: {url}")
@@ -237,7 +338,7 @@ def upload():
         db.commit()  # TODO: Handle primary key violation
 
         cursor.execute(
-            "insert into job values (?, ?, ?, ?)", (song_id, url, "", "waiting")
+            "insert into job_url values (?, ?, ?, ?)", (song_id, url, "", "waiting")
         )
         db.commit()
 
