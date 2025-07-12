@@ -134,7 +134,9 @@ def file_worker():
         command = [
             "ffmpeg",
             "-i",
-            f"{filename}",
+            filename,
+            "-movflags",
+            "faststart",
             "-c:a",
             "aac",
             "-vn",
