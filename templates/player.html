@@ -10,6 +10,7 @@
 function play() {
   document.querySelector('audio').play();
   document.getElementById('play').style.display = 'none';
+  document.getElementById('playbtn').style.display = 'none';
   document.getElementById('questionmark').style.display = 'inline-flex';
   document.getElementById('reveal').style.display = 'block';
 }
@@ -18,6 +19,9 @@ function reveal() {
   document.getElementById('reveal').style.display = 'none';
   document.getElementById('coverart').style.display = 'inline-flex';
   document.getElementById('metadata').style.display = 'block';
+}
+function next() {
+  window.location.reload();
 }
 </script>
 </head>
@@ -35,7 +39,7 @@ function reveal() {
       <div id=questionmark class=cover onclick='reveal()'>
         ?
       </div>
-      <div id=coverart class=cover>
+      <div id=coverart class=cover onclick='next()'>
         <img src={{ cover }} alt='Cover' />
       </div>
       <div>
@@ -45,6 +49,9 @@ function reveal() {
         </audio>
       </div>
 
+      <div id=playbtn>
+        <button onclick='play()'>Play →</button>
+      </div>
       <div id=reveal>
         <button onclick='reveal()'>Reveal →</button>
       </div>
@@ -53,7 +60,7 @@ function reveal() {
         <div id=title>{{ title }}</div>
         <div id=artist>{{ artist }}</div>
 
-        <button onclick='window.location.reload()'>Continue →</button>
+        <button onclick='next()'>Continue →</button>
       </div>
 	</main>
 
