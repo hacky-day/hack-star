@@ -244,6 +244,9 @@ def download_worker():
             output = result.stdout
             print(output)
 
+            # Delete temporary file
+            os.remove(f"{DATA_DIR}/{hex_id}.mp4")
+
             # Get data from Shazam
             loop = asyncio.get_event_loop()
             audio_file = f"{DATA_DIR}/{hex_id}.m4a"
