@@ -1,16 +1,16 @@
 body {
-	text-align: center;
-	font-family: sans;
+  text-align: center;
+  font-family: sans;
   background-color: #000558;
   color: #ffffff;
 }
 
 header {
-	padding: 0px;
+  padding: 0px;
 }
 
 header img {
-	max-width: 100%;
+  max-width: 100%;
 }
 
 header.top {
@@ -20,11 +20,11 @@ header.top {
   font-size: 32px;
   text-transform: uppercase;
   gap: 10px;
-	margin-top: 20px;
+  margin-top: 20px;
 }
 
 header.top img {
-	max-width: 92px;
+  max-width: 92px;
 }
 
 h1 {
@@ -67,11 +67,11 @@ form {
   gap: 10px;
 }
 
-form > * {
+form>* {
   padding: 5px 10px;
 }
 
-form > input {
+form>input {
   width: 70%;
   max-width: 500px;
 }
@@ -91,7 +91,8 @@ audio {
   max-width: 90%;
 }
 
-div.cover#questionmark, div.cover#coverart {
+div.cover#questionmark,
+div.cover#coverart {
   display: none;
 }
 
@@ -99,7 +100,8 @@ div.cover img {
   width: 100%;
 }
 
-#metadata, #reveal {
+#metadata,
+#reveal {
   margin-top: 25px;
   display: none;
 }
@@ -109,7 +111,8 @@ div.cover img {
   font-size: 64px;
 }
 
-#title, #artist {
+#title,
+#artist {
   font-size: 32px;
   font-weight: 200;
 }
@@ -120,4 +123,80 @@ div.cover img {
 
 #playbtn {
   padding: 30px;
+}
+
+/* Slide-in overlay menu */
+.menu {
+  position: fixed;
+  top: 0;
+  right: -250px;
+  /* Start hidden off-screen */
+  height: 100%;
+  width: 250px;
+  background-color: rgba(255, 255, 255, 0.97);
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  padding-top: 60px;
+  transition: right 0.3s ease-in-out;
+}
+
+.menu.open {
+  right: 0;
+  /* Slide into view */
+}
+
+.menu a {
+  padding: 15px 20px;
+  text-decoration: none;
+  color: #333;
+  font-size: 18px;
+  border-bottom: 1px solid #eee;
+}
+
+.menu a:hover {
+  background-color: #f0f0f0;
+}
+
+/* Burger button in fixed position */
+.burger {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+}
+
+.burger div {
+  width: 25px;
+  height: 3px;
+  background-color: white;
+  margin: 4px 0;
+}
+
+/* Show burger on smaller screens */
+@media (max-width: 768px) {
+  .burger {
+    display: flex;
+  }
+}
+
+/* Darkened background overlay when burger menu is expanded*/
+#overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none;
+  z-index: 9990;
+  /* Behind the menu, but over content */
+}
+
+#overlay.active {
+  display: block;
 }
