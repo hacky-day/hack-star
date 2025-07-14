@@ -5,6 +5,7 @@
 <meta name=viewport content="width=device-width, initial-scale=1">
 <link rel=icon type=image/x-icon href="{{ url_for('static', filename='hacky-day.png') }}" />
 <link rel=stylesheet type=text/css href="{{ url_for('static', filename='index.css') }}" />
+<script type=application/javascript src="{{ url_for('static', filename='menu.js') }}"></script>
 {% for script_url in (scripts if scripts is defined else []) %}
 <script type=application/javascript src="{{ url_for('static', filename=script_url) }}"></script>
 {% endfor %}
@@ -13,6 +14,27 @@
 {% block scripts %}{% endblock %}
 </head>
 <body>
+
+  <div id=navigation>
+    <!-- Burger button -->
+    <div class="burger" id="burger" onclick="toggleMenu()">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+
+    <!-- Background overlay -->
+    <div id="overlay" onclick="toggleMenu()"></div>
+
+    <!-- Slide-in menu -->
+    <nav class="menu" id="menu">
+      <a href="/game">Start Game</a>
+        —
+      <a href="/upload">upload</a>
+      <a href="/songs">Songs</a>
+      <a href="/stats">Statistics</a>
+    </nav>
+  </div>
 
   <header class={{ header_class | default('top') }}>
     <a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
