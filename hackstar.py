@@ -5,6 +5,8 @@ import random
 import sqlite3
 import subprocess
 import time
+import urllib.request
+import urllib.parse
 
 from flask import Flask, g, request, redirect, send_from_directory, render_template
 from shazamio import Shazam
@@ -107,6 +109,35 @@ def gen_hex_id(id: int) -> str:
     return hex(id)[2:]
 
 
+def download_cover_art(cover_url, hex_id):
+    """Download cover art and save it locally. Returns the local filename or None if failed."""
+    if not cover_url:
+        return None
+    
+    try:
+        # Determine file extension from URL
+        parsed_url = urllib.parse.urlparse(cover_url)
+        path = parsed_url.path
+        if path.endswith('.jpg') or path.endswith('.jpeg'):
+            ext = '.jpg'
+        elif path.endswith('.png'):
+            ext = '.png'
+        else:
+            ext = '.jpg'  # Default to jpg
+        
+        # Create filename
+        filename = f"{hex_id}{ext}"
+        filepath = os.path.join(DATA_DIR, filename)
+        
+        # Download the image
+        urllib.request.urlretrieve(cover_url, filepath)
+        
+        return filename
+    except Exception as e:
+        print(f"Error downloading cover art: {e}")
+        return None
+
+
 def file_worker():
     con = sqlite3.connect(DATABASE)
     cur = con.cursor()
@@ -158,10 +189,13 @@ def file_worker():
         title, artist, release_date, cover = loop.run_until_complete(shazam(audio_file))
         print("Shazam:", title, artist, release_date, cover)
 
+        # Download cover art
+        cover_filename = download_cover_art(cover, hex_id)
+        
         # Insert data in song create_table
         cur.execute(
             "update song set title = ?, artist = ?, release_date = ?, cover = ? where id = ?",
-            (title, artist, release_date, cover, song_id),
+            (title, artist, release_date, cover_filename, song_id),
         )
         con.commit()
 
@@ -255,10 +289,13 @@ def download_worker():
             )
             print("Shazam:", title, artist, release_date, cover)
 
+            # Download cover art
+            cover_filename = download_cover_art(cover, hex_id)
+
             # Insert data in song create_table
             cur.execute(
                 "update song set title = ?, artist = ?, release_date = ?, cover = ? where id = ?",
-                (title, artist, release_date, cover, song_id),
+                (title, artist, release_date, cover_filename, song_id),
             )
             con.commit()
 
@@ -353,6 +390,11 @@ def upload():
 @app.route("/song/<song_id>")
 def song(song_id):
     return send_from_directory(DATA_DIR, f"{song_id}.m4a", mimetype="audio/x-m4a")
+
+
+@app.route("/cover/<cover_file>")
+def cover(cover_file):
+    return send_from_directory(DATA_DIR, cover_file)
 
 
 @app.route("/game")
