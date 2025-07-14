@@ -185,9 +185,15 @@ def download_worker():
                 "select song_id, url from job_url where state = 'waiting' limit 1"
             )
         )
-        if data:
-            print(data)
-            song_id, url = data[0]
+        if not data:
+            time.sleep(5)
+            continue
+
+        print(data)
+        song_id, url = data[0]
+
+        # Process job if one is waiting
+        try:
             # Mark job_url as running
             cur.execute(
                 "update job_url set state = 'downloading' where song_id = ?", (song_id,)
@@ -269,7 +275,16 @@ def download_worker():
             )
             con.commit()
 
-        time.sleep(5)
+        except Exception as e:
+            print(f"Failed to process job {data}", e)
+            cur.execute(
+                "update job_url set state = 'failed', output = ? where song_id = ?",
+                (str(e), song_id),
+            )
+            con.commit()
+
+        time.sleep(0.1)
+
 
 
 def app_init():
