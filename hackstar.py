@@ -24,8 +24,7 @@ __SQL_CREATE = [
         id unsigned int primary key,
         title varchar(255),
         artist varchar(255),
-        release_date unsigned int,
-        cover varchar(255)
+        release_date unsigned int
     )""",
     """
     CREATE TABLE IF NOT EXISTS game(
@@ -51,17 +50,56 @@ __SQL_CREATE = [
     )""",
 ]
 
+__SQL_MIGRATIONS = [
+    # Version 0 -> 1: Remove cover column from song table
+    """
+    CREATE TABLE song_new(
+        id unsigned int primary key,
+        title varchar(255),
+        artist varchar(255),
+        release_date unsigned int
+    );
+    INSERT INTO song_new (id, title, artist, release_date) 
+    SELECT id, title, artist, release_date FROM song;
+    DROP TABLE song;
+    ALTER TABLE song_new RENAME TO song;
+    """,
+]
+
 
 def db_init():
     con = sqlite3.connect(DATABASE)
     cur = con.cursor()
     for create_table in __SQL_CREATE:
         cur.execute(create_table)
-    # Insert database version
+    
+    # Get current database version
     data = list(cur.execute("select version from version"))
+    current_version = data[0][0] if data else 0
+    
+    # If this is a new database, set version to latest
     if not data:
-        cur.execute("insert into version values(?)", (0,))
+        cur.execute("insert into version values(?)", (len(__SQL_MIGRATIONS),))
         con.commit()
+    else:
+        # Run migrations if needed
+        target_version = len(__SQL_MIGRATIONS)
+        if current_version < target_version:
+            print(f"Upgrading database from version {current_version} to {target_version}")
+            for version in range(current_version, target_version):
+                print(f"Running migration {version} -> {version + 1}")
+                # Execute migration SQL (split by semicolon to handle multiple statements)
+                migration_sql = __SQL_MIGRATIONS[version]
+                for statement in migration_sql.split(';'):
+                    statement = statement.strip()
+                    if statement:
+                        cur.execute(statement)
+                con.commit()
+            
+            # Update version
+            cur.execute("update version set version = ?", (target_version,))
+            con.commit()
+    
     con.close()
 
 
@@ -181,10 +219,10 @@ def file_worker():
         # Download cover art
         cover_filename = download_cover_art(cover, hex_id)
         
-        # Insert data in song create_table
+        # Insert data in song table
         cur.execute(
-            "update song set title = ?, artist = ?, release_date = ?, cover = ? where id = ?",
-            (title, artist, release_date, cover_filename, song_id),
+            "update song set title = ?, artist = ?, release_date = ? where id = ?",
+            (title, artist, release_date, song_id),
         )
         con.commit()
 
@@ -281,10 +319,10 @@ def download_worker():
             # Download cover art
             cover_filename = download_cover_art(cover, hex_id)
 
-            # Insert data in song create_table
+            # Insert data in song table
             cur.execute(
-                "update song set title = ?, artist = ?, release_date = ?, cover = ? where id = ?",
-                (title, artist, release_date, cover_filename, song_id),
+                "update song set title = ?, artist = ?, release_date = ? where id = ?",
+                (title, artist, release_date, song_id),
             )
             con.commit()
 
@@ -419,8 +457,15 @@ def next_song(game_id):
     if not songs:
         return redirect("/static/end.html", code=302)
     song = songs[0]
-    song_id, title, artist, release_date, cover = song
+    song_id, title, artist, release_date = song
     hex_id = hex(song_id)[2:]
+    
+    # Generate cover filename (cover art is always saved as hex_id.jpg)
+    cover_filename = f"{hex_id}.jpg"
+    # Check if cover file exists
+    cover_path = os.path.join(DATA_DIR, cover_filename)
+    cover = cover_filename if os.path.exists(cover_path) else None
+    
     # mark song as listened
     cur.execute("insert into game values (?, ?)", (game_id, song_id))
     db.commit()
