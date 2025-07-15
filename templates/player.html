@@ -41,11 +41,7 @@ function next() {
         ?
       </div>
       <div id=coverart class=cover onclick='next()'>
-        {% if cover %}
-        <img src="/cover/{{ cover }}" alt='Cover' />
-        {% else %}
-        <img src="/static/hacky-day.png" alt='No Cover' />
-        {% endif %}
+        <img src="{{ '/cover/' + cover if cover else '/static/hacky-day.png' }}" alt='Cover' />
       </div>
       <div>
         <audio controls>

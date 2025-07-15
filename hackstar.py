@@ -52,7 +52,10 @@ __SQL_CREATE = [
 
 __SQL_MIGRATIONS = [
     # Version 0 -> 1: Remove cover column from song table
-    "ALTER TABLE song DROP COLUMN cover",
+    [
+        "ALTER TABLE song DROP COLUMN cover",
+        "UPDATE version SET version = 1",
+    ],
 ]
 
 
@@ -78,13 +81,10 @@ def db_init():
             for version in range(current_version, target_version):
                 print(f"Running migration {version} -> {version + 1}")
                 # Execute migration SQL
-                migration_sql = __SQL_MIGRATIONS[version]
-                cur.execute(migration_sql)
+                migration_sqls = __SQL_MIGRATIONS[version]
+                for migration_sql in migration_sqls:
+                    cur.execute(migration_sql)
                 con.commit()
-            
-            # Update version
-            cur.execute("update version set version = ?", (target_version,))
-            con.commit()
     
     con.close()
 
@@ -137,18 +137,14 @@ def download_cover_art(cover_url, hex_id):
     if not cover_url:
         return None
     
-    try:
-        # Shazam cover images are always JPG format
-        filename = f"{hex_id}.jpg"
-        filepath = os.path.join(DATA_DIR, filename)
-        
-        # Download the image
-        urllib.request.urlretrieve(cover_url, filepath)
-        
-        return filename
-    except Exception as e:
-        print(f"Error downloading cover art: {e}")
-        return None
+    # Shazam cover images are always JPG format
+    filename = f"{hex_id}.jpg"
+    filepath = os.path.join(DATA_DIR, filename)
+    
+    # Download the image
+    urllib.request.urlretrieve(cover_url, filepath)
+    
+    return filename
 
 
 def file_worker():
@@ -203,7 +199,7 @@ def file_worker():
         print("Shazam:", title, artist, release_date, cover)
 
         # Download cover art
-        cover_filename = download_cover_art(cover, hex_id)
+        download_cover_art(cover, hex_id)
         
         # Insert data in song table
         cur.execute(
@@ -303,7 +299,7 @@ def download_worker():
             print("Shazam:", title, artist, release_date, cover)
 
             # Download cover art
-            cover_filename = download_cover_art(cover, hex_id)
+            download_cover_art(cover, hex_id)
 
             # Insert data in song table
             cur.execute(
@@ -405,9 +401,9 @@ def song(song_id):
     return send_from_directory(DATA_DIR, f"{song_id}.m4a", mimetype="audio/x-m4a")
 
 
-@app.route("/cover/<cover_file>")
-def cover(cover_file):
-    return send_from_directory(DATA_DIR, cover_file)
+@app.route("/cover/<song_id>")
+def cover(song_id):
+    return send_from_directory(DATA_DIR, f"{song_id}.jpg", mimetype="image/jpeg")
 
 
 @app.route("/game")
@@ -446,12 +442,6 @@ def next_song(game_id):
     song_id, title, artist, release_date = song
     hex_id = hex(song_id)[2:]
     
-    # Generate cover filename (cover art is always saved as hex_id.jpg)
-    cover_filename = f"{hex_id}.jpg"
-    # Check if cover file exists
-    cover_path = os.path.join(DATA_DIR, cover_filename)
-    cover = cover_filename if os.path.exists(cover_path) else None
-    
     # mark song as listened
     cur.execute("insert into game values (?, ?)", (game_id, song_id))
     db.commit()
@@ -462,7 +452,7 @@ def next_song(game_id):
         title=title,
         artist=artist,
         release_date=release_date,
-        cover=cover,
+        cover=hex_id,
     )
 
 
