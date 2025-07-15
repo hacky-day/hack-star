@@ -208,6 +208,11 @@ def download_worker():
                     info = ydl.extract_info(url, download=True)
                     output = f"Downloaded: {info.get('title', 'Unknown')} (ID: {info.get('id', 'Unknown')})"
                     print(output)
+                cur.execute(
+                    "update job_url set state = 'running', output = ? where song_id = ?",
+                    (output, song_id),
+                )
+                con.commit()
             except Exception as e:
                 output = f"Error downloading video: {str(e)}"
                 print(output)
@@ -218,11 +223,6 @@ def download_worker():
                 )
                 con.commit()
                 continue
-            cur.execute(
-                "update job_url set state = 'running', output = ? where song_id = ?",
-                (output, song_id),
-            )
-            con.commit()
 
             # Convert file
             command = [
