@@ -139,7 +139,7 @@ div.cover img {
   display: flex;
   flex-direction: column;
   padding-top: 60px;
-  transition: right 0.3s ease-in-out;
+  transition: right 0.5s ease-in-out;
 }
 
 .menu.open {
@@ -161,13 +161,18 @@ div.cover img {
 
 /* Burger button in fixed position */
 .burger {
-  display: none;
+  display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
   cursor: pointer;
   position: fixed;
   top: 20px;
   right: 20px;
+  width: 40px;
+  height: 40px;
   z-index: 10000;
+  transition: transform 0.5s ease;
 }
 
 .burger div {
@@ -175,14 +180,29 @@ div.cover img {
   height: 3px;
   background-color: white;
   margin: 4px 0;
+  transition: all 0.5s ease;
 }
 
-/* Show burger on smaller screens */
-@media (max-width: 768px) {
-  .burger {
-    display: flex;
-  }
+/* Animate burger into X when menu is open */
+.burger.open div:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 10.5px);
+  background-color: #000558;
 }
+
+.burger.open div:nth-child(2) {
+  opacity: 0;
+}
+
+.burger.open div:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -10.5px);
+  background-color: #000558;
+}
+
+/* hover effect */
+.burger:hover div {
+  background-color: #01DFFDFF;
+}
+
 
 /* Darkened background overlay when burger menu is expanded*/
 #overlay {
