@@ -207,9 +207,11 @@ def download_worker():
                 "--extract-audio",
                 "--audio-format",
                 "aac",
+                "--postprocessor-args",
+                "-movflags faststart",
                 "--no-playlist",
                 "--output",
-                f"{hex_id}.tmp",
+                hex_id,
                 url,
             )
             result = subprocess.run(
@@ -227,32 +229,6 @@ def download_worker():
                 (output, song_id),
             )
             con.commit()
-
-            # Convert file
-            command = [
-                "ffmpeg",
-                "-i",
-                f"{hex_id}.tmp.m4a",
-                "-movflags",
-                "faststart",
-                "-c:a",
-                "copy",
-                "-vn",
-                f"{hex_id}.m4a",
-            ]
-            result = subprocess.run(
-                command,
-                text=True,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=DATA_DIR,
-            )
-            output = result.stdout
-            print(output)
-
-            # Delete temporary file
-            os.remove(f"{DATA_DIR}/{hex_id}.tmp.m4a")
 
             # Get data from Shazam
             loop = asyncio.get_event_loop()
