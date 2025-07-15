@@ -6,7 +6,6 @@ import sqlite3
 import subprocess
 import time
 import urllib.request
-import urllib.parse
 
 from flask import Flask, g, request, redirect, send_from_directory, render_template
 from shazamio import Shazam
@@ -115,18 +114,8 @@ def download_cover_art(cover_url, hex_id):
         return None
     
     try:
-        # Determine file extension from URL
-        parsed_url = urllib.parse.urlparse(cover_url)
-        path = parsed_url.path
-        if path.endswith('.jpg') or path.endswith('.jpeg'):
-            ext = '.jpg'
-        elif path.endswith('.png'):
-            ext = '.png'
-        else:
-            ext = '.jpg'  # Default to jpg
-        
-        # Create filename
-        filename = f"{hex_id}{ext}"
+        # Shazam cover images are always JPG format
+        filename = f"{hex_id}.jpg"
         filepath = os.path.join(DATA_DIR, filename)
         
         # Download the image
