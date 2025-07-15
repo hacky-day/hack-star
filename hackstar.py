@@ -52,18 +52,7 @@ __SQL_CREATE = [
 
 __SQL_MIGRATIONS = [
     # Version 0 -> 1: Remove cover column from song table
-    """
-    CREATE TABLE song_new(
-        id unsigned int primary key,
-        title varchar(255),
-        artist varchar(255),
-        release_date unsigned int
-    );
-    INSERT INTO song_new (id, title, artist, release_date) 
-    SELECT id, title, artist, release_date FROM song;
-    DROP TABLE song;
-    ALTER TABLE song_new RENAME TO song;
-    """,
+    "ALTER TABLE song DROP COLUMN cover",
 ]
 
 
@@ -88,12 +77,9 @@ def db_init():
             print(f"Upgrading database from version {current_version} to {target_version}")
             for version in range(current_version, target_version):
                 print(f"Running migration {version} -> {version + 1}")
-                # Execute migration SQL (split by semicolon to handle multiple statements)
+                # Execute migration SQL
                 migration_sql = __SQL_MIGRATIONS[version]
-                for statement in migration_sql.split(';'):
-                    statement = statement.strip()
-                    if statement:
-                        cur.execute(statement)
+                cur.execute(migration_sql)
                 con.commit()
             
             # Update version
