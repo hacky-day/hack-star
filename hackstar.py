@@ -196,25 +196,28 @@ def download_worker():
 
             # Download from YouTube
             hex_id = gen_hex_id(song_id)
-            command = (
-                "yt-dlp",
-                "--format",
-                "234",
-                "--no-playlist",
-                "--output",
-                f"{hex_id}.mp4",
-                url,
-            )
-            result = subprocess.run(
-                command,
-                text=True,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=DATA_DIR,
-            )
-            output = result.stdout
-            print(output)
+            output_path = os.path.join(DATA_DIR, f"{hex_id}.mp4")
+            ydl_opts = {
+                'format': '234',
+                'noplaylist': True,
+                'outtmpl': output_path,
+            }
+            
+            try:
+                with YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    output = f"Downloaded: {info.get('title', 'Unknown')} (ID: {info.get('id', 'Unknown')})"
+                    print(output)
+            except Exception as e:
+                output = f"Error downloading video: {str(e)}"
+                print(output)
+                # Mark as failed and continue to next job
+                cur.execute(
+                    "update job_url set state = 'failed', output = ? where song_id = ?",
+                    (output, song_id),
+                )
+                con.commit()
+                continue
             cur.execute(
                 "update job_url set state = 'running', output = ? where song_id = ?",
                 (output, song_id),
