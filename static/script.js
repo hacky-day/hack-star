@@ -12,7 +12,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 function toggleMenu() {
     const menu = document.getElementById('menu');
     const overlay = document.getElementById('overlay');
-    const burger = document.querySelector('.burger');
+    const burger = document.getElementById('burger');
     const isOpen = menu?.classList.contains('open');
 
     if (isOpen) {
@@ -28,7 +28,7 @@ function toggleMenu() {
 
 // Close menu on outside click
 document.addEventListener('click', function (event) {
-    const burger = document.querySelector('.burger');
+    const burger = document.getElementById('burger');
     const menu = document.getElementById('menu');
     const overlay = document.getElementById('overlay');
 
