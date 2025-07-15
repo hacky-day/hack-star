@@ -55,3 +55,13 @@ function closeMenu() {
     // Remove event listener when menu closes
     document.removeEventListener('click', handleOutsideClick);
 }
+
+// Prevent menu from staying open on back/forward navigation
+window.addEventListener('pageshow', () => {
+    closeMenu(true); // true = skip animation
+});
+
+// Optional: if you use history.pushState or have SPA behavior
+window.addEventListener('popstate', () => {
+    closeMenu(true); // true = skip animation
+});
