@@ -76,15 +76,16 @@ def db_init():
     else:
         # Run migrations if needed
         target_version = len(__SQL_MIGRATIONS)
-        if current_version < target_version:
-            print(f"Upgrading database from version {current_version} to {target_version}")
-            for version in range(current_version, target_version):
-                print(f"Running migration {version} -> {version + 1}")
-                # Execute migration SQL
-                migration_sqls = __SQL_MIGRATIONS[version]
-                for migration_sql in migration_sqls:
+        for version in range(current_version, target_version):
+            print(f"Running migration {version} -> {version + 1}")
+            # Execute migration SQL in transaction
+            try:
+                for migration_sql in __SQL_MIGRATIONS[version]:
                     cur.execute(migration_sql)
                 con.commit()
+            except Exception:
+                con.rollback()
+                raise
     
     con.close()
 
@@ -133,18 +134,10 @@ def gen_hex_id(id: int) -> str:
 
 
 def download_cover_art(cover_url, hex_id):
-    """Download cover art and save it locally. Returns the local filename or None if failed."""
-    if not cover_url:
-        return None
-    
-    # Shazam cover images are always JPG format
-    filename = f"{hex_id}.jpg"
-    filepath = os.path.join(DATA_DIR, filename)
-    
-    # Download the image
-    urllib.request.urlretrieve(cover_url, filepath)
-    
-    return filename
+    """Download cover art and save it locally."""
+    if cover_url:
+        filepath = os.path.join(DATA_DIR, f"{hex_id}.jpg")
+        urllib.request.urlretrieve(cover_url, filepath)
 
 
 def file_worker():
@@ -452,7 +445,6 @@ def next_song(game_id):
         title=title,
         artist=artist,
         release_date=release_date,
-        cover=hex_id,
     )
 
 
