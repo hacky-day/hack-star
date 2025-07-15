@@ -20,11 +20,15 @@ header.top {
   font-size: 32px;
   text-transform: uppercase;
   gap: 10px;
-	margin-top: 20px;
+  margin: 20px 0;
+}
+
+header.top a {
+  height: 64px;
 }
 
 header.top img {
-	max-width: 92px;
+  max-width: 64px;
 }
 
 h1 {
