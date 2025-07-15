@@ -16,20 +16,21 @@ function toggleMenu() {
     const isOpen = menu?.classList.contains('open');
 
     if (isOpen) {
-        menu.classList.remove('open');
-        overlay.classList.remove('active');
-        burger?.classList.remove('open');
+        closeMenu();
     } else {
         menu.classList.add('open');
         overlay.classList.add('active');
-        burger?.classList.add('open');
+        burger.classList.add('open');
+
+        // Register event listener only when menu opens
+        document.addEventListener('click', handleOutsideClick);
     }
 }
 
 // Close menu on outside click
-document.addEventListener('click', function (event) {
-    const burger = document.getElementById('burger');
+function handleOutsideClick(event) {
     const menu = document.getElementById('menu');
+    const burger = document.getElementById('burger');
     const overlay = document.getElementById('overlay');
 
     if (
@@ -37,7 +38,20 @@ document.addEventListener('click', function (event) {
         !menu?.contains(event.target) &&
         !overlay?.contains(event.target)
     ) {
-        menu?.classList.remove('open');
-        overlay?.classList.remove('active');
+        closeMenu();
     }
-});
+}
+
+// Close menu and de-register event listener
+function closeMenu() {
+    const menu = document.getElementById('menu');
+    const overlay = document.getElementById('overlay');
+    const burger = document.getElementById('burger');
+
+    menu.classList.remove('open');
+    overlay.classList.remove('active');
+    burger.classList.remove('open');
+
+    // Remove event listener when menu closes
+    document.removeEventListener('click', handleOutsideClick);
+}
