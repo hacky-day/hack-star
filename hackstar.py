@@ -204,11 +204,12 @@ def download_worker():
             hex_id = gen_hex_id(song_id)
             command = (
                 "yt-dlp",
-                "--format",
-                "234",
+                "--extract-audio",
+                "--audio-format",
+                "aac",
                 "--no-playlist",
                 "--output",
-                f"{hex_id}.mp4",
+                f"{hex_id}.tmp",
                 url,
             )
             result = subprocess.run(
@@ -231,7 +232,7 @@ def download_worker():
             command = [
                 "ffmpeg",
                 "-i",
-                f"{hex_id}.mp4",
+                f"{hex_id}.tmp.m4a",
                 "-movflags",
                 "faststart",
                 "-c:a",
@@ -251,7 +252,7 @@ def download_worker():
             print(output)
 
             # Delete temporary file
-            os.remove(f"{DATA_DIR}/{hex_id}.mp4")
+            os.remove(f"{DATA_DIR}/{hex_id}.tmp.m4a")
 
             # Get data from Shazam
             loop = asyncio.get_event_loop()
