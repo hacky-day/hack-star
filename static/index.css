@@ -1,16 +1,16 @@
 body {
-  text-align: center;
-  font-family: sans;
+	text-align: center;
+	font-family: sans;
   background-color: #000558;
   color: #ffffff;
 }
 
 header {
-  padding: 0px;
+	padding: 0px;
 }
 
 header img {
-  max-width: 100%;
+	max-width: 100%;
 }
 
 header.top {
@@ -20,11 +20,11 @@ header.top {
   font-size: 32px;
   text-transform: uppercase;
   gap: 10px;
-  margin-top: 20px;
+	margin-top: 20px;
 }
 
 header.top img {
-  max-width: 92px;
+	max-width: 92px;
 }
 
 h1 {
@@ -67,11 +67,11 @@ form {
   gap: 10px;
 }
 
-form>* {
+form > * {
   padding: 5px 10px;
 }
 
-form>input {
+form > input {
   width: 70%;
   max-width: 500px;
 }
@@ -91,8 +91,7 @@ audio {
   max-width: 90%;
 }
 
-div.cover#questionmark,
-div.cover#coverart {
+div.cover#questionmark, div.cover#coverart {
   display: none;
 }
 
@@ -100,8 +99,7 @@ div.cover img {
   width: 100%;
 }
 
-#metadata,
-#reveal {
+#metadata, #reveal {
   margin-top: 25px;
   display: none;
 }
@@ -111,8 +109,7 @@ div.cover img {
   font-size: 64px;
 }
 
-#title,
-#artist {
+#title, #artist {
   font-size: 32px;
   font-weight: 200;
 }
