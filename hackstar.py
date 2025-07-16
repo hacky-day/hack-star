@@ -50,12 +50,32 @@ __SQL_CREATE = [
     )""",
 ]
 
+def gen_hex_id(id: int) -> str:
+    return hex(id)[2:]
+
+def migrate_v0_to_v1(con, cur):
+    """Migration 0 -> 1: Download existing cover URLs and remove cover column"""
+    import urllib.request
+    import os
+    
+    # First, download all existing cover URLs
+    rows = cur.execute("SELECT id, cover FROM song WHERE cover IS NOT NULL AND cover != ''").fetchall()
+    for song_id, cover_url in rows:
+        try:
+            hex_id = gen_hex_id(song_id)
+            filepath = os.path.join(DATA_DIR, f"{hex_id}.jpg")
+            urllib.request.urlretrieve(cover_url, filepath)
+            print(f"Downloaded cover for song {song_id}: {cover_url}")
+        except Exception as e:
+            print(f"Failed to download cover for song {song_id}: {e}")
+    
+    # Then drop the cover column
+    cur.execute("ALTER TABLE song DROP COLUMN cover")
+    cur.execute("UPDATE version SET version = 1")
+
 __SQL_MIGRATIONS = [
     # Version 0 -> 1: Remove cover column from song table
-    [
-        "ALTER TABLE song DROP COLUMN cover",
-        "UPDATE version SET version = 1",
-    ],
+    migrate_v0_to_v1,
 ]
 
 
@@ -78,10 +98,16 @@ def db_init():
         target_version = len(__SQL_MIGRATIONS)
         for version in range(current_version, target_version):
             print(f"Running migration {version} -> {version + 1}")
-            # Execute migration SQL in transaction
+            # Execute migration in transaction
             try:
-                for migration_sql in __SQL_MIGRATIONS[version]:
-                    cur.execute(migration_sql)
+                migration = __SQL_MIGRATIONS[version]
+                if callable(migration):
+                    # Custom migration function
+                    migration(con, cur)
+                else:
+                    # SQL migration array
+                    for migration_sql in migration:
+                        cur.execute(migration_sql)
                 con.commit()
             except Exception:
                 con.rollback()
@@ -127,10 +153,6 @@ def youtube_playlist_links(url):
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         return [entry["url"] for entry in info.get("entries", [])]
-
-
-def gen_hex_id(id: int) -> str:
-    return hex(id)[2:]
 
 
 def download_cover_art(cover_url, hex_id):
