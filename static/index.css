@@ -125,3 +125,41 @@ div.cover img {
 #playbtn {
   padding: 30px;
 }
+
+/* Statistics styling */
+#stats-container {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #ffffff;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+#stats-container h2 {
+  margin-top: 0;
+  font-size: 24px;
+  font-weight: 100;
+  text-transform: uppercase;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+  padding: 5px 0;
+}
+
+.stat-label {
+  font-weight: 200;
+}
+
+.stat-value {
+  font-weight: 300;
+  color: #ffffff;
+}
+
+#stats-loading {
+  text-align: center;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.7);
+}

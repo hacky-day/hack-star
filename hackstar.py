@@ -303,6 +303,42 @@ def home():
     return redirect("/static/index.html", code=302)
 
 
+@app.route("/api/stats", methods=["GET"])
+def get_stats():
+    db = get_db()
+    cursor = db.cursor()
+    
+    # Get total number of songs
+    song_count = cursor.execute("SELECT COUNT(*) FROM song").fetchone()[0]
+    
+    # Get job statistics for URL jobs
+    url_jobs = cursor.execute("SELECT state, COUNT(*) FROM job_url GROUP BY state").fetchall()
+    
+    # Get job statistics for file jobs
+    file_jobs = cursor.execute("SELECT state, COUNT(*) FROM job_file GROUP BY state").fetchall()
+    
+    # Combine job statistics
+    job_stats = {}
+    for state, count in url_jobs:
+        job_stats[state] = job_stats.get(state, 0) + count
+    
+    for state, count in file_jobs:
+        job_stats[state] = job_stats.get(state, 0) + count
+    
+    cursor.close()
+    
+    # Return JSON response
+    return {
+        "songs_count": song_count,
+        "jobs": {
+            "processed": job_stats.get("finished", 0),
+            "running": job_stats.get("running", 0) + job_stats.get("downloading", 0),
+            "failed": job_stats.get("failed", 0),
+            "waiting": job_stats.get("waiting", 0)
+        }
+    }
+
+
 @app.route("/upload", methods=["POST"])
 def upload():
     url = request.form.get("url")
