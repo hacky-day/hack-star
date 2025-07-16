@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import multiprocessing
 import os
 import random
@@ -12,6 +13,13 @@ from yt_dlp import YoutubeDL
 
 DATABASE = os.environ.get("HACKSTAR_DATABASE", "db/hackstar.db")
 DATA_DIR = os.environ.get("HACKSTAR_DATA_DIR", "data")
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 __SQL_CREATE = [
     """
@@ -70,7 +78,7 @@ async def shazam(audio_file):
     track = out["track"]
 
     title = track["title"]
-    print("title", title)
+    logger.info("Track title: %s", title)
 
     release_date = track.get("releasedate")
     if release_date:
@@ -80,15 +88,15 @@ async def shazam(audio_file):
         for data in metadata:
             if data["title"] == "Released":
                 release_date = int(data["text"])
-    print("release_date", release_date)
+    logger.info("Release date: %s", release_date)
 
     cover = track.get("images", {}).get("coverart")
-    print("cover", cover)
+    logger.info("Cover art: %s", cover)
 
     artist_id = int(track["artists"][0]["adamid"])
     about_artist = await shazam.artist_about(artist_id)
     artist = about_artist["data"][0]["attributes"]["name"]
-    print("artist", artist)
+    logger.info("Artist: %s", artist)
 
     return title, artist, release_date, cover
 
@@ -120,7 +128,7 @@ def file_worker():
         if not data:
             time.sleep(5)
             continue
-        print(data)
+        logger.debug("Processing file job: %s", data)
         song_id, filename = data[0]
         # Mark job_file as running
         cur.execute(
@@ -150,13 +158,13 @@ def file_worker():
             stderr=subprocess.STDOUT,
             cwd=DATA_DIR,
         )
-        print(result.stdout)
+        logger.debug("FFmpeg output: %s", result.stdout)
 
         # Get data from Shazam
         loop = asyncio.get_event_loop()
         audio_file = f"{DATA_DIR}/{hex_id}.m4a"
         title, artist, release_date, cover = loop.run_until_complete(shazam(audio_file))
-        print("Shazam:", title, artist, release_date, cover)
+        logger.info("Shazam result: %s by %s (%s)", title, artist, release_date)
 
         # Insert data in song create_table
         cur.execute(
@@ -189,7 +197,7 @@ def download_worker():
             time.sleep(5)
             continue
 
-        print(data)
+        logger.info("Processing download job: %s", data)
         song_id, url = data[0]
 
         # Process job if one is waiting
@@ -223,7 +231,7 @@ def download_worker():
                 cwd=DATA_DIR,
             )
             output = result.stdout
-            print(output)
+            logger.debug("yt-dlp output: %s", output)
             cur.execute(
                 "update job_url set state = 'running', output = ? where song_id = ?",
                 (output, song_id),
@@ -236,7 +244,7 @@ def download_worker():
             title, artist, release_date, cover = loop.run_until_complete(
                 shazam(audio_file)
             )
-            print("Shazam:", title, artist, release_date, cover)
+            logger.info("Shazam result: %s by %s (%s)", title, artist, release_date)
 
             # Insert data in song create_table
             cur.execute(
@@ -266,10 +274,10 @@ def download_worker():
 
 def app_init():
     db_init()
-    print("Starting worker")
+    logger.info("Starting worker processes")
     multiprocessing.Process(target=download_worker).start()
     multiprocessing.Process(target=file_worker).start()
-    print("Starting web application")
+    logger.info("Starting web application")
     return Flask(__name__)
 
 
@@ -311,7 +319,7 @@ def upload():
         for file in file_list:
             if not file.filename:
                 continue
-            print(f"Adding file: {file.filename}")
+            logger.info("Adding file: %s", file.filename)
             song_id = random.randint(100000000, 999999999)
             hex_id = gen_hex_id(song_id)
             cursor.execute("insert into song (id) values (?)", (song_id,))
@@ -326,7 +334,7 @@ def upload():
             db.commit()
 
     for url in urls:
-        print(f"Adding URL: {url}")
+        logger.info("Adding URL: %s", url)
 
         song_id = random.randint(100000000, 999999999)
         cursor.execute("insert into song (id) values (?)", (song_id,))
