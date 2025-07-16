@@ -303,8 +303,8 @@ def home():
     return redirect("/static/index.html", code=302)
 
 
-@app.route("/api/stats", methods=["GET"])
-def get_stats():
+@app.route("/stats")
+def stats():
     db = get_db()
     cursor = db.cursor()
     
@@ -327,8 +327,8 @@ def get_stats():
     
     cursor.close()
     
-    # Return JSON response
-    return {
+    # Prepare data for template
+    stats_data = {
         "songs_count": song_count,
         "jobs": {
             "processed": job_stats.get("finished", 0),
@@ -337,6 +337,8 @@ def get_stats():
             "waiting": job_stats.get("waiting", 0)
         }
     }
+    
+    return render_template("stats.html", **stats_data)
 
 
 @app.route("/upload", methods=["POST"])

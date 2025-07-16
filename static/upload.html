@@ -16,35 +16,6 @@
 	</header>
 
 	<main>
-    <div id="stats-container">
-      <h2>Statistics</h2>
-      <div id="stats-content">
-        <div id="stats-loading">Loading statistics...</div>
-        <div id="stats-data" style="display: none;">
-          <div class="stat-item">
-            <span class="stat-label">Songs in database:</span>
-            <span class="stat-value" id="songs-count">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Jobs processed:</span>
-            <span class="stat-value" id="jobs-processed">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Jobs running:</span>
-            <span class="stat-value" id="jobs-running">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Jobs failed:</span>
-            <span class="stat-value" id="jobs-failed">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Jobs waiting:</span>
-            <span class="stat-value" id="jobs-waiting">0</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <form action=/upload method=post enctype=multipart/form-data>
       <input type=url id=url name=url placeholder=https://youtube.com/v... />
       <label for=playlist>
@@ -55,30 +26,7 @@
       <button type=submit>Upload</button>
     </form>
 
-    <script>
-      // Function to fetch and display statistics
-      function loadStats() {
-        fetch('/api/stats')
-          .then(response => response.json())
-          .then(data => {
-            document.getElementById('songs-count').textContent = data.songs_count;
-            document.getElementById('jobs-processed').textContent = data.jobs.processed;
-            document.getElementById('jobs-running').textContent = data.jobs.running;
-            document.getElementById('jobs-failed').textContent = data.jobs.failed;
-            document.getElementById('jobs-waiting').textContent = data.jobs.waiting;
-            
-            document.getElementById('stats-loading').style.display = 'none';
-            document.getElementById('stats-data').style.display = 'block';
-          })
-          .catch(error => {
-            console.error('Error loading stats:', error);
-            document.getElementById('stats-loading').textContent = 'Error loading statistics';
-          });
-      }
-
-      // Load statistics when page loads
-      document.addEventListener('DOMContentLoaded', loadStats);
-    </script>
+    <p><a href="/stats">View Statistics →</a></p>
 	</main>
 
 </body>
