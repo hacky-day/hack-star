@@ -210,27 +210,23 @@ def download_worker():
 
             # Download from YouTube
             hex_id = gen_hex_id(song_id)
-            command = (
-                "yt-dlp",
-                "--extract-audio",
-                "--audio-format",
-                "aac",
-                "--postprocessor-args",
-                "-movflags faststart",
-                "--no-playlist",
-                "--output",
-                hex_id,
-                url,
-            )
-            result = subprocess.run(
-                command,
-                text=True,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=DATA_DIR,
-            )
-            output = result.stdout
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'aac',
+                    'preferredquality': '128',
+                }],
+                'postprocessor_args': ['-movflags', 'faststart'],
+                'outtmpl': os.path.join(DATA_DIR, f'{hex_id}.%(ext)s'),
+                'noplaylist': True,
+                'quiet': True,
+            }
+            
+            with YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+            
+            output = f"Downloaded {url} to {hex_id}.m4a"
             logger.debug("yt-dlp output: %s", output)
             cur.execute(
                 "update job_url set state = 'running', output = ? where song_id = ?",
