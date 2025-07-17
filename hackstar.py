@@ -161,9 +161,8 @@ def file_worker():
         logger.debug("FFmpeg output: %s", result.stdout)
 
         # Get data from Shazam
-        loop = asyncio.get_event_loop()
         audio_file = f"{DATA_DIR}/{hex_id}.m4a"
-        title, artist, release_date, cover = loop.run_until_complete(shazam(audio_file))
+        title, artist, release_date, cover = asyncio.run(shazam(audio_file))
         logger.info("Shazam result: %s by %s (%s)", title, artist, release_date)
 
         # Insert data in song create_table
@@ -239,9 +238,8 @@ def download_worker():
             con.commit()
 
             # Get data from Shazam
-            loop = asyncio.get_event_loop()
             audio_file = f"{DATA_DIR}/{hex_id}.m4a"
-            title, artist, release_date, cover = loop.run_until_complete(
+            title, artist, release_date, cover = asyncio.run(
                 shazam(audio_file)
             )
             logger.info("Shazam result: %s by %s (%s)", title, artist, release_date)
