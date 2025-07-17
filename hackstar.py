@@ -220,6 +220,7 @@ def download_worker():
                 'postprocessor_args': ['-movflags', 'faststart'],
                 'outtmpl': os.path.join(DATA_DIR, f'{hex_id}.%(ext)s'),
                 'noplaylist': True,
+                'quiet': True,
             }
             
             with YoutubeDL(ydl_opts) as ydl:
