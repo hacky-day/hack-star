@@ -20,6 +20,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+logging.getLogger('symphonia_bundle_mp3.demuxer').setLevel(logging.ERROR)
 
 __SQL_CREATE = [
     """
