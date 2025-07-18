@@ -16,17 +16,40 @@
 	</header>
 
 	<main>
+    <div class="upload-instructions">
+      <h2>Upload Music</h2>
+      <p>Choose one of the methods below to add music to your collection:</p>
+    </div>
+
     <form action=/upload method=post enctype=multipart/form-data>
-      <input type=url id=url name=url placeholder=https://youtube.com/v... />
-      <label for=playlist>
-        <input type=checkbox id=playlist name=playlist value=playlist />
-        Playlist
-      </label>
-      <input type="file" name="files" multiple>
-      <button type=submit>Upload</button>
+      <div class="upload-section">
+        <h3>📺 YouTube Upload</h3>
+        <p class="section-description">Add music from YouTube by providing a video or playlist URL</p>
+        <input type=url id=url name=url placeholder="https://youtube.com/watch?v=..." />
+        <label for=playlist class="checkbox-label">
+          <input type=checkbox id=playlist name=playlist value=playlist />
+          <span class="checkbox-text">
+            <strong>Import entire playlist</strong>
+            <small>Check this if the URL is a YouTube playlist and you want to import all videos</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="upload-divider">
+        <span>OR</span>
+      </div>
+
+      <div class="upload-section">
+        <h3>📁 File Upload</h3>
+        <p class="section-description">Upload audio files directly from your computer</p>
+        <input type="file" name="files" multiple accept="audio/*,.mp3,.wav,.flac,.m4a,.aac">
+        <small class="file-help">You can select multiple audio files at once</small>
+      </div>
+
+      <button type=submit class="upload-button">Upload</button>
     </form>
 
-    <p><a href="/stats">View Statistics →</a></p>
+    <p class="stats-link"><a href="/stats">View Statistics →</a></p>
 	</main>
 
 </body>
