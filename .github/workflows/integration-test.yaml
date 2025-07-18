@@ -1,0 +1,53 @@
+name: Integration Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt update
+          sudo apt install ffmpeg
+
+      - name: install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Launch application
+        run: nohup python hackstar.py &
+
+      - name: Import song
+        working-directory: .github
+        run: >
+          curl http://127.0.0.1:8000/upload
+          -F files=@brain-implant-cyberpunk-sci-fi-trailer-action-intro-330416.m4a
+
+      - name: Wait for song to be imported
+        run: sleep 30
+
+      - name: Start new game
+        run: >
+          curl -fsI http://127.0.0.1:8000/game
+          | sed -n 's/^Location: *\(.*\)\r$/\1/p'
+          > game.id 
+
+      - name: Check for song page response
+        run: >
+          curl -fsI http://127.0.0.1:8000$(cat game.id)
+          | grep '200 OK' 
+
+      - name: Check for end page response
+        run: >
+          curl -fsI http://127.0.0.1:8000$(cat game.id)
+          | grep 'Location: /static/end.html'
