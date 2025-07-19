@@ -15,41 +15,38 @@
     Upload
 	</header>
 
-	<main>
-    <div class="upload-instructions">
-      <h2>Upload Music</h2>
-      <p>Choose one of the methods below to add music to your collection:</p>
-    </div>
-
+	<main class=upload>
     <form action=/upload method=post enctype=multipart/form-data>
-      <div class="upload-section">
-        <h3>📺 YouTube Upload</h3>
-        <p class="section-description">Add music from YouTube by providing a video or playlist URL</p>
+      <section>
+        <h3>YouTube Upload</h3>
+        <p>Add music from YouTube by providing a video or playlist URL</p>
         <input type=url id=url name=url placeholder="https://youtube.com/watch?v=..." />
         <label for=playlist class="checkbox-label">
           <input type=checkbox id=playlist name=playlist value=playlist />
-          <span class="checkbox-text">
-            <strong>Import entire playlist</strong>
+          <span>
+            <div>Import entire playlist</div>
             <small>Check this if the URL is a YouTube playlist and you want to import all videos</small>
           </span>
         </label>
-      </div>
+
+        <button>Upload</button>
+      </section>
 
       <div class="upload-divider">
-        <span>OR</span>
+        — OR —
       </div>
 
-      <div class="upload-section">
-        <h3>📁 File Upload</h3>
-        <p class="section-description">Upload audio files directly from your computer</p>
-        <input type="file" name="files" multiple accept="audio/*,.mp3,.wav,.flac,.m4a,.aac">
-        <small class="file-help">You can select multiple audio files at once</small>
-      </div>
+      <section>
+        <h3>File Upload</h3>
+        <p>Upload audio files directly from your computer</p>
+        <input type="file" name="files" multiple accept="audio/*,.mp3,.wav,.flac,.m4a,.mp4">
+        <p>You can select multiple audio files at once</p>
 
-      <button type=submit class="upload-button">Upload</button>
+        <button>Upload</button>
+      </section>
     </form>
 
-    <p class="stats-link"><a href="/stats">View Statistics →</a></p>
+    <a class="statslink" href="/stats">View Statistics →</a>
 	</main>
 
 </body>
