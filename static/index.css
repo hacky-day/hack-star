@@ -37,11 +37,13 @@ h1 {
 }
 
 button {
+  width: 100%;
   background-color: transparent;
   color: white;
-  border: 1px solid white;
+  border: 1px solid silver;
   border-radius: 5px;
-  padding: 5px 15px;
+  padding: 8px 15px;
+  margin: 5px 0;
 }
 
 a#go {
@@ -162,4 +164,43 @@ div.cover img {
   text-align: center;
   font-style: italic;
   color: rgba(255, 255, 255, 0.7);
+}
+
+/* Upload page styling */
+main.upload {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+main.upload section {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 25px;
+  margin: 10px 0;
+  text-align: left;
+}
+
+main.upload section input[type="url"], 
+main.upload section input[type="file"] {
+  width: 90%;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 3px 10px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.upload-divider {
+  margin: 30px 0;
+}
+
+a.statslink {
+  display: block;
+  padding: 20px;
 }
