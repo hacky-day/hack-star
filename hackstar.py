@@ -336,6 +336,86 @@ def stats():
     return render_template("stats.html", **stats_data)
 
 
+@app.route("/songs")
+def songs():
+    db = get_db()
+    cursor = db.cursor()
+    
+    # Get all songs with their metadata
+    songs_query = """
+        SELECT id, title, artist, release_date, cover
+        FROM song
+        ORDER BY id DESC
+    """
+    songs = cursor.execute(songs_query).fetchall()
+    
+    # Get import status for each song
+    songs_with_status = []
+    for song in songs:
+        song_id, title, artist, release_date, cover = song
+        
+        # Check URL job status
+        url_job = cursor.execute(
+            "SELECT state, url FROM job_url WHERE song_id = ?", (song_id,)
+        ).fetchone()
+        
+        # Check file job status  
+        file_job = cursor.execute(
+            "SELECT state, filename FROM job_file WHERE song_id = ?", (song_id,)
+        ).fetchone()
+        
+        # Determine import status and source
+        import_status = "unknown"
+        import_source = "unknown"
+        
+        if url_job:
+            import_status = url_job[0]
+            import_source = f"URL: {url_job[1][:50]}..." if len(url_job[1]) > 50 else f"URL: {url_job[1]}"
+        elif file_job:
+            import_status = file_job[0]
+            import_source = f"File: {file_job[1]}"
+        
+        songs_with_status.append({
+            'id': song_id,
+            'hex_id': gen_hex_id(song_id),
+            'title': title or 'Unknown Title',
+            'artist': artist or 'Unknown Artist', 
+            'release_date': release_date or 'Unknown',
+            'cover': cover,
+            'import_status': import_status,
+            'import_source': import_source
+        })
+    
+    cursor.close()
+    return render_template("songs.html", songs=songs_with_status)
+
+
+@app.route("/songs/<int:song_id>/delete", methods=["POST"])
+def delete_song(song_id):
+    db = get_db()
+    cursor = db.cursor()
+    
+    try:
+        # Delete the song record (this will cascade to related job records)
+        cursor.execute("DELETE FROM song WHERE id = ?", (song_id,))
+        
+        # Remove the audio file if it exists
+        hex_id = gen_hex_id(song_id)
+        audio_file = f"{DATA_DIR}/{hex_id}.m4a"
+        if os.path.exists(audio_file):
+            os.remove(audio_file)
+            
+        db.commit()
+        logger.info(f"Deleted song {song_id}")
+        
+    except Exception as e:
+        logger.error(f"Error deleting song {song_id}: {e}")
+        db.rollback()
+        
+    cursor.close()
+    return redirect("/songs")
+
+
 @app.route("/upload", methods=["POST"])
 def upload():
     url = request.form.get("url")
