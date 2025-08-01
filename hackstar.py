@@ -390,26 +390,32 @@ def songs():
     return render_template("songs.html", songs=songs_with_status)
 
 
-@app.route("/songs/<int:song_id>/delete", methods=["POST"])
+@app.route("/songs/<song_id>/delete", methods=["POST"])
 def delete_song(song_id):
+    # Convert hex_id back to integer for database operations
+    try:
+        song_int_id = int(song_id, 16)
+    except ValueError:
+        logger.error(f"Invalid song ID format: {song_id}")
+        return redirect("/songs")
+    
     db = get_db()
     cursor = db.cursor()
     
     try:
         # Delete the song record (this will cascade to related job records)
-        cursor.execute("DELETE FROM song WHERE id = ?", (song_id,))
+        cursor.execute("DELETE FROM song WHERE id = ?", (song_int_id,))
         
         # Remove the audio file if it exists
-        hex_id = gen_hex_id(song_id)
-        audio_file = f"{DATA_DIR}/{hex_id}.m4a"
+        audio_file = f"{DATA_DIR}/{song_id}.m4a"
         if os.path.exists(audio_file):
             os.remove(audio_file)
             
         db.commit()
-        logger.info(f"Deleted song {song_id}")
+        logger.info(f"Deleted song {song_int_id}")
         
     except Exception as e:
-        logger.error(f"Error deleting song {song_id}: {e}")
+        logger.error(f"Error deleting song {song_int_id}: {e}")
         db.rollback()
         
     cursor.close()
