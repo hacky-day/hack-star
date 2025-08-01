@@ -205,7 +205,7 @@ a.statslink {
   padding: 20px;
 }
 
-/* Song Management styling */
+/* Song Management styling - reuses existing container pattern */
 #songs-container {
   margin-bottom: 30px;
   padding: 20px;
@@ -237,7 +237,6 @@ a.statslink {
   align-items: center;
   gap: 15px;
   flex: 1;
-  min-width: 0;
 }
 
 .song-cover {
@@ -255,29 +254,21 @@ a.statslink {
 
 .song-info {
   flex: 1;
-  min-width: 0;
   text-align: left;
 }
 
 .song-title {
-  font-size: 16px;
   font-weight: 300;
   margin-bottom: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .song-artist {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.8);
   margin-bottom: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.song-year {
+.song-year, .song-id {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
   margin-bottom: 3px;
@@ -303,33 +294,14 @@ a.statslink {
   font-weight: 300;
 }
 
-.import-status-finished {
-  background-color: rgba(0, 255, 0, 0.2);
-  color: #90ff90;
-}
-
-.import-status-running, .import-status-downloading {
-  background-color: rgba(255, 255, 0, 0.2);
-  color: #ffff90;
-}
-
-.import-status-waiting {
-  background-color: rgba(128, 128, 128, 0.2);
-  color: #c0c0c0;
-}
-
-.import-status-failed {
-  background-color: rgba(255, 0, 0, 0.2);
-  color: #ff9090;
-}
+.import-status-finished { background-color: rgba(0, 255, 0, 0.2); color: #90ff90; }
+.import-status-running, .import-status-downloading { background-color: rgba(255, 255, 0, 0.2); color: #ffff90; }
+.import-status-waiting { background-color: rgba(128, 128, 128, 0.2); color: #c0c0c0; }
+.import-status-failed { background-color: rgba(255, 0, 0, 0.2); color: #ff9090; }
 
 .import-source {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.5);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
 }
 
 .song-actions {
@@ -339,39 +311,30 @@ a.statslink {
   min-width: 80px;
 }
 
+.song-play-btn, .delete-btn {
+  border-radius: 3px;
+  padding: 5px 10px;
+  font-size: 12px;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .song-play-btn {
   background-color: rgba(0, 255, 0, 0.2);
   color: #90ff90;
   border: 1px solid rgba(0, 255, 0, 0.3);
-  border-radius: 3px;
-  padding: 5px 10px;
-  text-decoration: none;
-  font-size: 12px;
-  text-align: center;
-}
-
-.song-play-btn:hover {
-  background-color: rgba(0, 255, 0, 0.3);
-}
-
-.delete-form {
-  margin: 0;
 }
 
 .delete-btn {
   background-color: rgba(255, 0, 0, 0.2);
   color: #ff9090;
   border: 1px solid rgba(255, 0, 0, 0.3);
-  border-radius: 3px;
-  padding: 5px 10px;
-  font-size: 12px;
   width: 100%;
-  cursor: pointer;
 }
 
-.delete-btn:hover {
-  background-color: rgba(255, 0, 0, 0.3);
-}
+.song-play-btn:hover { background-color: rgba(0, 255, 0, 0.3); }
+.delete-btn:hover { background-color: rgba(255, 0, 0, 0.3); }
 
 .no-songs {
   text-align: center;
@@ -385,31 +348,13 @@ a.statslink {
   margin-top: 20px;
 }
 
-.navigation-links p {
-  margin: 0;
-}
+.navigation-links p { margin: 0; }
 
-/* Responsive design for smaller screens */
+.delete-form { margin: 0; }
+
 @media (max-width: 768px) {
-  .song-item {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  
-  .song-metadata {
-    justify-content: center;
-    text-align: center;
-  }
-  
-  .song-status, .song-actions {
-    text-align: center;
-    min-width: auto;
-  }
-  
-  .navigation-links {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
-  }
+  .song-item { flex-direction: column; gap: 10px; }
+  .song-metadata { justify-content: center; text-align: center; }
+  .song-status, .song-actions { text-align: center; }
+  .navigation-links { flex-direction: column; gap: 10px; text-align: center; }
 }
