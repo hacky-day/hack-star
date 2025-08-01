@@ -6,6 +6,7 @@ import random
 import sqlite3
 import subprocess
 import time
+import urllib.request
 
 from flask import Flask, g, request, redirect, send_from_directory, render_template
 from shazamio import Shazam
@@ -32,8 +33,7 @@ __SQL_CREATE = [
         id unsigned int primary key,
         title varchar(255),
         artist varchar(255),
-        release_date unsigned int,
-        cover varchar(255)
+        release_date unsigned int
     )""",
     """
     CREATE TABLE IF NOT EXISTS game(
@@ -59,17 +59,69 @@ __SQL_CREATE = [
     )""",
 ]
 
+def gen_hex_id(id: int) -> str:
+    return hex(id)[2:]
+
+def migrate_v0_to_v1(con, cur):
+    """Migration 0 -> 1: Download existing cover URLs and remove cover column"""
+    import urllib.request
+    import os
+    
+    # First, download all existing cover URLs
+    rows = cur.execute("SELECT id, cover FROM song WHERE cover IS NOT NULL AND cover != ''").fetchall()
+    for song_id, cover_url in rows:
+        try:
+            hex_id = gen_hex_id(song_id)
+            filepath = os.path.join(DATA_DIR, f"{hex_id}.jpg")
+            urllib.request.urlretrieve(cover_url, filepath)
+            print(f"Downloaded cover for song {song_id}: {cover_url}")
+        except Exception as e:
+            print(f"Failed to download cover for song {song_id}: {e}")
+    
+    # Then drop the cover column
+    cur.execute("ALTER TABLE song DROP COLUMN cover")
+    cur.execute("UPDATE version SET version = 1")
+
+__SQL_MIGRATIONS = [
+    # Version 0 -> 1: Remove cover column from song table
+    migrate_v0_to_v1,
+]
+
 
 def db_init():
     con = sqlite3.connect(DATABASE)
     cur = con.cursor()
     for create_table in __SQL_CREATE:
         cur.execute(create_table)
-    # Insert database version
+    
+    # Get current database version
     data = list(cur.execute("select version from version"))
+    current_version = data[0][0] if data else 0
+    
+    # If this is a new database, set version to latest
     if not data:
-        cur.execute("insert into version values(?)", (0,))
+        cur.execute("insert into version values(?)", (len(__SQL_MIGRATIONS),))
         con.commit()
+    else:
+        # Run migrations if needed
+        target_version = len(__SQL_MIGRATIONS)
+        for version in range(current_version, target_version):
+            print(f"Running migration {version} -> {version + 1}")
+            # Execute migration in transaction
+            try:
+                migration = __SQL_MIGRATIONS[version]
+                if callable(migration):
+                    # Custom migration function
+                    migration(con, cur)
+                else:
+                    # SQL migration array
+                    for migration_sql in migration:
+                        cur.execute(migration_sql)
+                con.commit()
+            except Exception:
+                con.rollback()
+                raise
+    
     con.close()
 
 
@@ -112,8 +164,11 @@ def youtube_playlist_links(url):
         return [entry["url"] for entry in info.get("entries", [])]
 
 
-def gen_hex_id(id: int) -> str:
-    return hex(id)[2:]
+def download_cover_art(cover_url, hex_id):
+    """Download cover art and save it locally."""
+    if cover_url:
+        filepath = os.path.join(DATA_DIR, f"{hex_id}.jpg")
+        urllib.request.urlretrieve(cover_url, filepath)
 
 
 def file_worker():
@@ -166,10 +221,13 @@ def file_worker():
         title, artist, release_date, cover = asyncio.run(shazam(audio_file))
         logger.info("Shazam result: %s by %s (%s)", title, artist, release_date)
 
-        # Insert data in song create_table
+        # Download cover art
+        download_cover_art(cover, hex_id)
+        
+        # Insert data in song table
         cur.execute(
-            "update song set title = ?, artist = ?, release_date = ?, cover = ? where id = ?",
-            (title, artist, release_date, cover, song_id),
+            "update song set title = ?, artist = ?, release_date = ? where id = ?",
+            (title, artist, release_date, song_id),
         )
         con.commit()
 
@@ -241,10 +299,13 @@ def download_worker():
             )
             logger.info("Shazam result: %s by %s (%s)", title, artist, release_date)
 
-            # Insert data in song create_table
+            # Download cover art
+            download_cover_art(cover, hex_id)
+
+            # Insert data in song table
             cur.execute(
-                "update song set title = ?, artist = ?, release_date = ?, cover = ? where id = ?",
-                (title, artist, release_date, cover, song_id),
+                "update song set title = ?, artist = ?, release_date = ? where id = ?",
+                (title, artist, release_date, song_id),
             )
             con.commit()
 
@@ -388,6 +449,11 @@ def song(song_id):
     return send_from_directory(DATA_DIR, f"{song_id}.m4a", mimetype="audio/x-m4a")
 
 
+@app.route("/cover/<song_id>")
+def cover(song_id):
+    return send_from_directory(DATA_DIR, f"{song_id}.jpg", mimetype="image/jpeg")
+
+
 @app.route("/game")
 def new_game():
     db = get_db()
@@ -421,8 +487,9 @@ def next_song(game_id):
     if not songs:
         return redirect("/static/end.html", code=302)
     song = songs[0]
-    song_id, title, artist, release_date, cover = song
+    song_id, title, artist, release_date = song
     hex_id = hex(song_id)[2:]
+    
     # mark song as listened
     cur.execute("insert into game values (?, ?)", (game_id, song_id))
     db.commit()
@@ -433,7 +500,6 @@ def next_song(game_id):
         title=title,
         artist=artist,
         release_date=release_date,
-        cover=cover,
     )
 
 
