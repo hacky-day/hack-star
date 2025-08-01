@@ -341,39 +341,33 @@ def songs():
     db = get_db()
     cursor = db.cursor()
     
-    # Get all songs with their metadata
+    # Get all songs with their job status using JOIN
     songs_query = """
-        SELECT id, title, artist, release_date, cover
-        FROM song
-        ORDER BY id DESC
+        SELECT s.id, s.title, s.artist, s.release_date, s.cover, 
+               f.state as file_state, f.filename, 
+               u.state as url_state, u.url
+        FROM song s
+        LEFT OUTER JOIN job_url u ON s.id = u.song_id
+        LEFT OUTER JOIN job_file f ON s.id = f.song_id
+        ORDER BY s.id DESC
     """
     songs = cursor.execute(songs_query).fetchall()
     
-    # Get import status for each song
+    # Process the results
     songs_with_status = []
     for song in songs:
-        song_id, title, artist, release_date, cover = song
-        
-        # Check URL job status
-        url_job = cursor.execute(
-            "SELECT state, url FROM job_url WHERE song_id = ?", (song_id,)
-        ).fetchone()
-        
-        # Check file job status  
-        file_job = cursor.execute(
-            "SELECT state, filename FROM job_file WHERE song_id = ?", (song_id,)
-        ).fetchone()
+        song_id, title, artist, release_date, cover, file_state, filename, url_state, url = song
         
         # Determine import status and source
         import_status = "unknown"
         import_source = "unknown"
         
-        if url_job:
-            import_status = url_job[0]
-            import_source = f"URL: {url_job[1][:50]}..." if len(url_job[1]) > 50 else f"URL: {url_job[1]}"
-        elif file_job:
-            import_status = file_job[0]
-            import_source = f"File: {file_job[1]}"
+        if url_state:
+            import_status = url_state
+            import_source = f"URL: {url[:50]}..." if url and len(url) > 50 else f"URL: {url}" if url else "URL: unknown"
+        elif file_state:
+            import_status = file_state
+            import_source = f"File: {filename}" if filename else "File: unknown"
         
         songs_with_status.append({
             'id': song_id,
@@ -390,14 +384,10 @@ def songs():
     return render_template("songs.html", songs=songs_with_status)
 
 
-@app.route("/songs/<song_id>/delete", methods=["POST"])
+@app.route("/songs/<song_id>/delete", methods=["DELETE"])
 def delete_song(song_id):
     # Convert hex_id back to integer for database operations
-    try:
-        song_int_id = int(song_id, 16)
-    except ValueError:
-        logger.error(f"Invalid song ID format: {song_id}")
-        return redirect("/songs")
+    song_int_id = int(song_id, 16)
     
     db = get_db()
     cursor = db.cursor()
