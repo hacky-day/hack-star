@@ -14,7 +14,24 @@ function deleteSong(songId) {
       method: 'DELETE'
     }).then(response => {
       if (response.ok) {
-        location.reload();
+        // Remove the song element from the DOM instead of reloading
+        const songElement = document.getElementById('song-' + songId);
+        if (songElement) {
+          songElement.remove();
+          // Update the songs count
+          const songsContainer = document.getElementById('songs-container');
+          const remainingSongs = document.querySelectorAll('.song-item').length;
+          const title = songsContainer.querySelector('h2');
+          title.textContent = 'Songs (' + remainingSongs + ')';
+          
+          // Show "no songs" message if all songs are deleted
+          if (remainingSongs === 0) {
+            const songsContent = document.getElementById('songs-content');
+            if (songsContent) {
+              songsContent.innerHTML = '<div class="no-songs"><p>No songs found in the database.</p><p><a href="/static/upload.html">Upload some songs →</a></p></div>';
+            }
+          }
+        }
       } else {
         alert('Error deleting song');
       }
@@ -39,11 +56,16 @@ function deleteSong(songId) {
       {% if songs %}
       <div id="songs-content">
         {% for song in songs %}
-        <div class="song-item">
+        <div class="song-item" id="song-{{ song.hex_id }}">
           <div class="song-metadata">
             {% if song.cover %}
             <div class="song-cover">
               <img src="{{ song.cover }}" alt="Cover" />
+              {% if song.import_status == 'finished' %}
+              <a href="/song/{{ song.hex_id }}" class="play-overlay" target="_blank" title="Play song">
+                <div class="play-icon">▶</div>
+              </a>
+              {% endif %}
             </div>
             {% endif %}
             <div class="song-info">
@@ -62,9 +84,6 @@ function deleteSong(songId) {
           </div>
           
           <div class="song-actions">
-            {% if song.import_status == 'finished' %}
-            <a href="/song/{{ song.hex_id }}" class="song-play-btn" target="_blank">Play</a>
-            {% endif %}
             <button type="button" class="delete-btn" onclick="deleteSong('{{ song.hex_id }}')">Delete</button>
           </div>
         </div>

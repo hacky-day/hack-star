@@ -243,6 +243,7 @@ a.statslink {
   width: 60px;
   height: 60px;
   flex-shrink: 0;
+  position: relative;
 }
 
 .song-cover img {
@@ -250,6 +251,32 @@ a.statslink {
   height: 100%;
   object-fit: cover;
   border-radius: 3px;
+}
+
+.play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 3px;
+  text-decoration: none;
+}
+
+.play-overlay:hover {
+  opacity: 1;
+}
+
+.play-icon {
+  color: white;
+  font-size: 20px;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
 }
 
 .song-info {
@@ -302,6 +329,10 @@ a.statslink {
 .import-source {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 120px;
 }
 
 .song-actions {
@@ -311,29 +342,19 @@ a.statslink {
   min-width: 80px;
 }
 
-.song-play-btn, .delete-btn {
+.delete-btn {
   border-radius: 3px;
   padding: 5px 10px;
   font-size: 12px;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-}
-
-.song-play-btn {
-  background-color: rgba(0, 255, 0, 0.2);
-  color: #90ff90;
-  border: 1px solid rgba(0, 255, 0, 0.3);
-}
-
-.delete-btn {
   background-color: rgba(255, 0, 0, 0.2);
   color: #ff9090;
   border: 1px solid rgba(255, 0, 0, 0.3);
   width: 100%;
 }
 
-.song-play-btn:hover { background-color: rgba(0, 255, 0, 0.3); }
 .delete-btn:hover { background-color: rgba(255, 0, 0, 0.3); }
 
 .no-songs {

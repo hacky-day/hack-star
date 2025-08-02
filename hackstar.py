@@ -359,25 +359,17 @@ def songs():
         song_id, title, artist, release_date, cover, file_state, filename, url_state, url = song
         
         # Determine import status and source
-        import_status = "unknown"
-        import_source = "unknown"
-        
-        if url_state:
-            import_status = url_state
-            import_source = f"URL: {url[:50]}..." if url and len(url) > 50 else f"URL: {url}" if url else "URL: unknown"
-        elif file_state:
-            import_status = file_state
-            import_source = f"File: {filename}" if filename else "File: unknown"
+        import_status = url_state or file_state
+        import_source = url or filename
         
         songs_with_status.append({
-            'id': song_id,
             'hex_id': gen_hex_id(song_id),
             'title': title or 'Unknown Title',
             'artist': artist or 'Unknown Artist', 
             'release_date': release_date or 'Unknown',
             'cover': cover,
-            'import_status': import_status,
-            'import_source': import_source
+            'import_status': import_status or 'unknown',
+            'import_source': import_source or 'unknown'
         })
     
     cursor.close()
