@@ -13,27 +13,20 @@ function deleteSong(songId) {
     fetch('/songs/' + songId + '/delete', {
       method: 'DELETE'
     }).then(response => {
-      if (response.ok) {
-        // Remove the song element from the DOM instead of reloading
-        const songElement = document.getElementById('song-' + songId);
-        if (songElement) {
-          songElement.remove();
-          // Update the songs count
-          const songsContainer = document.getElementById('songs-container');
-          const remainingSongs = document.querySelectorAll('.song-item').length;
-          const title = songsContainer.querySelector('h2');
-          title.textContent = 'Songs (' + remainingSongs + ')';
-          
-          // Show "no songs" message if all songs are deleted
-          if (remainingSongs === 0) {
-            const songsContent = document.getElementById('songs-content');
-            if (songsContent) {
-              songsContent.innerHTML = '<div class="no-songs"><p>No songs found in the database.</p><p><a href="/static/upload.html">Upload some songs →</a></p></div>';
-            }
-          }
-        }
-      } else {
+      if (!response.ok) {
         alert('Error deleting song');
+        return;
+      }
+      // Remove the song element from the DOM
+      document.getElementById('song-' + songId).remove();
+      
+      // Update the songs count and show "no songs" message if all songs are deleted
+      const remainingSongs = document.querySelectorAll('.song-item').length;
+      if (remainingSongs === 0) {
+        const songsContent = document.getElementById('songs-content');
+        if (songsContent) {
+          songsContent.innerHTML = '<div class="no-songs"><p>No songs found in the database.</p><p><a href="/static/upload.html">Upload some songs →</a></p></div>';
+        }
       }
     }).catch(error => {
       alert('Error deleting song: ' + error);
@@ -45,13 +38,13 @@ function deleteSong(songId) {
 <body>
 
 	<header class=top>
-		<a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
-    Song Management
+		<a><img alt="hacky·day"></a>
+        Song Management
 	</header>
 
 	<main>
     <div id="songs-container">
-      <h2>Songs ({{ songs|length }})</h2>
+      <h2>Songs</h2>
       
       {% if songs %}
       <div id="songs-content">
