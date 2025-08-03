@@ -1,21 +1,12 @@
-<!DOCTYPE html>
-<html lang=en>
-<head>
-<meta http-equiv=content-type content="text/html; charset=utf-8" />
-<meta name=viewport content="width=device-width, initial-scale=1">
-<link rel=icon type=image/x-icon href=/static/hacky-day.png />
-<link rel=stylesheet type=text/css href=/static/index.css />
+{% extends "base.html" %}
 
-<title>hack·star - Statistics</title>
-</head>
-<body>
+{% block title %}hack·star - Statistics{% endblock %}
 
-	<header class=top>
-		<a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
-    Statistics
-	</header>
+{% block header_class %} class=top{% endblock %}
 
-	<main>
+{% block header_title %}Statistics{% endblock %}
+
+{% block content %}
     <div id="stats-container">
       <h2>Statistics</h2>
       <div id="stats-content">
@@ -44,7 +35,4 @@
 
     <p><a href="/static/upload.html">← Back to Upload</a></p>
     <p><a href="/songs">Manage Songs →</a></p>
-	</main>
-
-</body>
-</html>
+{% endblock %}
