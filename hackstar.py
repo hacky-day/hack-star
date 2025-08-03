@@ -16,11 +16,10 @@ DATA_DIR = os.environ.get("HACKSTAR_DATA_DIR", "data")
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-logging.getLogger('symphonia_bundle_mp3.demuxer').setLevel(logging.ERROR)
+logging.getLogger("symphonia_bundle_mp3.demuxer").setLevel(logging.ERROR)
 
 __SQL_CREATE = [
     """
@@ -211,21 +210,23 @@ def download_worker():
             # Download from YouTube
             hex_id = gen_hex_id(song_id)
             ydl_opts = {
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'aac',
-                    'preferredquality': '128',
-                }],
-                'postprocessor_args': ['-movflags', 'faststart'],
-                'outtmpl': os.path.join(DATA_DIR, f'{hex_id}.%(ext)s'),
-                'noplaylist': True,
-                'quiet': True,
+                "format": "bestaudio/best",
+                "postprocessors": [
+                    {
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "aac",
+                        "preferredquality": "128",
+                    }
+                ],
+                "postprocessor_args": ["-movflags", "faststart"],
+                "outtmpl": os.path.join(DATA_DIR, f"{hex_id}.%(ext)s"),
+                "noplaylist": True,
+                "quiet": True,
             }
-            
+
             with YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
-            
+
             output = f"Downloaded {url} to {hex_id}.m4a"
             logger.debug("yt-dlp output: %s", output)
             cur.execute(
@@ -236,9 +237,7 @@ def download_worker():
 
             # Get data from Shazam
             audio_file = f"{DATA_DIR}/{hex_id}.m4a"
-            title, artist, release_date, cover = asyncio.run(
-                shazam(audio_file)
-            )
+            title, artist, release_date, cover = asyncio.run(shazam(audio_file))
             logger.info("Shazam result: %s by %s (%s)", title, artist, release_date)
 
             # Insert data in song create_table
@@ -264,7 +263,6 @@ def download_worker():
             con.commit()
 
         time.sleep(0.1)
-
 
 
 def app_init():
@@ -302,26 +300,30 @@ def home():
 def stats():
     db = get_db()
     cursor = db.cursor()
-    
+
     # Get total number of songs
     song_count = cursor.execute("SELECT COUNT(*) FROM song").fetchone()[0]
-    
+
     # Get job statistics for URL jobs
-    url_jobs = cursor.execute("SELECT state, COUNT(*) FROM job_url GROUP BY state").fetchall()
-    
+    url_jobs = cursor.execute(
+        "SELECT state, COUNT(*) FROM job_url GROUP BY state"
+    ).fetchall()
+
     # Get job statistics for file jobs
-    file_jobs = cursor.execute("SELECT state, COUNT(*) FROM job_file GROUP BY state").fetchall()
-    
+    file_jobs = cursor.execute(
+        "SELECT state, COUNT(*) FROM job_file GROUP BY state"
+    ).fetchall()
+
     # Combine job statistics
     job_stats = {}
     for state, count in url_jobs:
         job_stats[state] = job_stats.get(state, 0) + count
-    
+
     for state, count in file_jobs:
         job_stats[state] = job_stats.get(state, 0) + count
-    
+
     cursor.close()
-    
+
     # Prepare data for template
     stats_data = {
         "songs_count": song_count,
@@ -329,10 +331,10 @@ def stats():
             "processed": job_stats.get("finished", 0),
             "running": job_stats.get("running", 0) + job_stats.get("downloading", 0),
             "failed": job_stats.get("failed", 0),
-            "waiting": job_stats.get("waiting", 0)
-        }
+            "waiting": job_stats.get("waiting", 0),
+        },
     }
-    
+
     return render_template("stats.html", **stats_data)
 
 
@@ -340,7 +342,7 @@ def stats():
 def songs():
     db = get_db()
     cursor = db.cursor()
-    
+
     # Get all songs with their job status using JOIN
     songs_query = """
         SELECT s.id, s.title, s.artist, s.release_date, s.cover, 
@@ -349,29 +351,41 @@ def songs():
         FROM song s
         LEFT OUTER JOIN job_url u ON s.id = u.song_id
         LEFT OUTER JOIN job_file f ON s.id = f.song_id
-        ORDER BY s.id DESC
+        ORDER BY s.artist, s.title DESC
     """
     songs = cursor.execute(songs_query).fetchall()
-    
+
     # Process the results
     songs_with_status = []
     for song in songs:
-        song_id, title, artist, release_date, cover, file_state, filename, url_state, url = song
-        
+        (
+            song_id,
+            title,
+            artist,
+            release_date,
+            cover,
+            file_state,
+            filename,
+            url_state,
+            url,
+        ) = song
+
         # Determine import status and source
         import_status = url_state or file_state
         import_source = url or filename
-        
-        songs_with_status.append({
-            'hex_id': gen_hex_id(song_id),
-            'title': title or 'Unknown Title',
-            'artist': artist or 'Unknown Artist', 
-            'release_date': release_date or 'Unknown',
-            'cover': cover,
-            'import_status': import_status or 'unknown',
-            'import_source': import_source or 'unknown'
-        })
-    
+
+        songs_with_status.append(
+            {
+                "hex_id": gen_hex_id(song_id),
+                "title": title or "Unknown Title",
+                "artist": artist or "Unknown Artist",
+                "release_date": release_date or "Unknown",
+                "cover": cover,
+                "import_status": import_status or "unknown",
+                "import_source": import_source or "unknown",
+            }
+        )
+
     cursor.close()
     return render_template("songs.html", songs=songs_with_status)
 
@@ -380,28 +394,28 @@ def songs():
 def delete_song(song_id):
     # Convert hex_id back to integer for database operations
     song_int_id = int(song_id, 16)
-    
+
     db = get_db()
     cursor = db.cursor()
-    
+
     try:
         # Delete the song record (this will cascade to related job records)
         cursor.execute("DELETE FROM song WHERE id = ?", (song_int_id,))
-        
+
         # Remove the audio file if it exists
         audio_file = f"{DATA_DIR}/{song_id}.m4a"
         if os.path.exists(audio_file):
             os.remove(audio_file)
-            
+
         db.commit()
         logger.info(f"Deleted song {song_int_id}")
-        
+
     except Exception as e:
         logger.error(f"Error deleting song {song_int_id}: {e}")
         db.rollback()
-        
+
     cursor.close()
-    return redirect("/songs")
+    return "deleted"
 
 
 @app.route("/upload", methods=["POST"])
