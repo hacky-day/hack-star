@@ -1,12 +1,6 @@
-﻿<!DOCTYPE html>
-<html lang=en>
-<head>
-<meta http-equiv=content-type content="text/html; charset=utf-8" />
-<meta name=viewport content="width=device-width, initial-scale=1">
-<link rel=icon type=image/x-icon href=/static/hacky-day.png />
-<link rel=stylesheet type=text/css href=/static/index.css />
+{% extends "base.html" %}
 
-<title>hack·star</title>
+{% block scripts %}
 <script>
 function play() {
   document.querySelector('audio').play();
@@ -25,15 +19,13 @@ function next() {
   window.location.reload();
 }
 </script>
-</head>
-<body>
+{% endblock %}
 
-	<header class=top>
-		<a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
-    hack·star
-	</header>
+{% block header_class %} class=top{% endblock %}
 
-	<main>
+{% block header_title %}hack·star{% endblock %}
+
+{% block content %}
       <div id=play class=cover onclick='play()'>
 		  ▶
       </div>
@@ -63,7 +55,4 @@ function next() {
 
         <button onclick='next()'>Continue →</button>
       </div>
-	</main>
-
-</body>
-</html>
+{% endblock %}
