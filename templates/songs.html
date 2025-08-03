@@ -6,7 +6,7 @@
 <link rel=icon type=image/x-icon href=/static/hacky-day.png />
 <link rel=stylesheet type=text/css href=/static/index.css />
 
-<title>hack·star - Song Management</title>
+<title>hack·star - Songs</title>
 <script>
 // Audio player functionality
 let currentAudio = null;
@@ -119,59 +119,57 @@ function deleteSong(songId) {
 </head>
 <body>
 
-	<header class=top>
-		<a><img src="/static/hacky-day.png" alt="hacky·day"></a>
-        Song Management
-	</header>
+  <header class=top>
+    <a><img src="/static/hacky-day.png" alt="hacky·day"></a>
+    Songs
+  </header>
 
-	<main>
+  <main>
     <div id="songs-container">
-      <h2>Songs</h2>
-      
-      {% if songs %}
-        {% for song in songs %}
-        <div class="song-item" id="song-{{ song.hex_id }}">
-          <div class="song-metadata">
-            {% if song.cover %}
-            <div class="song-cover">
-              <img src="{{ song.cover }}" alt="Cover" />
-              {% if song.import_status == 'finished' %}
-              <div class="play-overlay" onclick="playPauseSong('{{ song.hex_id }}')" title="Play/Pause song">
-                <div class="play-icon">▶</div>
-              </div>
-              {% endif %}
-            </div>
-            {% else %}
-            <div class="song-cover status-icon">
-              {% if song.import_status == 'running' or song.import_status == 'downloading' %}
-              <div class="status-icon-content status-running" title="Processing">⟳</div>
-              {% elif song.import_status == 'waiting' %}
-              <div class="status-icon-content status-waiting" title="Waiting">⏳</div>
-              {% elif song.import_status == 'failed' %}
-              <div class="status-icon-content status-failed" title="Failed">⚠</div>
-              {% else %}
-              <div class="status-icon-content status-unknown" title="Unknown">?</div>
-              {% endif %}
+      {% for song in songs %}
+      <div class="song-item" id="song-{{ song.hex_id }}">
+        <div class="song-metadata">
+          {% if song.cover %}
+          <div class="song-cover">
+            <img src="{{ song.cover }}" alt="Cover" />
+            {% if song.import_status == 'finished' %}
+            <div class="play-overlay" onclick="playPauseSong('{{ song.hex_id }}')" title="Play/Pause song">
+              <div class="play-icon">▶</div>
             </div>
             {% endif %}
-            <div class="song-info">
-              <div class="song-title">{{ song.title }}</div>
-              <div class="song-artist">{{ song.artist }}</div>
-              <div class="song-year">{{ song.release_date }}</div>
-            </div>
           </div>
-          
-          <div class="song-actions">
-            <div class="dropdown">
-              <button class="dropdown-btn" onclick="toggleDropdown('{{ song.hex_id }}')">⋯</button>
-              <div class="dropdown-content" id="dropdown-{{ song.hex_id }}">
-                <button type="button" class="dropdown-item" onclick="deleteSong('{{ song.hex_id }}')">Delete</button>
-              </div>
+          {% else %}
+          <div class="song-cover status-icon">
+            {% if song.import_status == 'running' or song.import_status == 'downloading' %}
+            <div class="status-icon-content status-running" title="Processing">⟳</div>
+            {% elif song.import_status == 'waiting' %}
+            <div class="status-icon-content status-waiting" title="Waiting">⏳</div>
+            {% elif song.import_status == 'failed' %}
+            <div class="status-icon-content status-failed" title="Failed">⚠</div>
+            {% else %}
+            <div class="status-icon-content status-unknown" title="Unknown">?</div>
+            {% endif %}
+          </div>
+          {% endif %}
+          <div class="song-info">
+            <div class="song-title">{{ song.title }}</div>
+            <div class="song-artist">{{ song.artist }}</div>
+            <div class="song-year">{{ song.release_date }}</div>
+          </div>
+        </div>
+        
+        <div class="song-actions">
+          <div class="dropdown">
+            <button class="dropdown-btn" onclick="toggleDropdown('{{ song.hex_id }}')">⋯</button>
+            <div class="dropdown-content" id="dropdown-{{ song.hex_id }}">
+              <button type="button" class="dropdown-item" onclick="deleteSong('{{ song.hex_id }}')">Delete</button>
             </div>
           </div>
         </div>
-        {% endfor %}
-      {% else %}
+      </div>
+      {% endfor %}
+
+      {% if not songs %}
       <div class="no-songs">
         <p>No songs found in the database.</p>
         <p><a href="/static/upload.html">Upload some songs →</a></p>
@@ -183,7 +181,7 @@ function deleteSong(songId) {
       <p><a href="/static/upload.html">← Back to Upload</a></p>
       <p><a href="/stats">View Statistics →</a></p>
     </div>
-	</main>
+  </main>
 
 </body>
 </html>

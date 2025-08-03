@@ -328,8 +328,8 @@ a.statslink {
 
 .song-actions {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: -8px;
+  right: 4px;
   z-index: 10;
 }
 
@@ -365,6 +365,7 @@ a.statslink {
   border-radius: 8px;
   z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  margin-top: -8px;
 }
 
 .dropdown-item {
