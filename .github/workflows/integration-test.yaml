@@ -30,7 +30,7 @@ jobs:
       - name: Import song
         working-directory: .github
         run: >
-          curl http://127.0.0.1:8000/upload
+          curl -si http://127.0.0.1:8000/upload
           -F files=@brain-implant-cyberpunk-sci-fi-trailer-action-intro-330416.m4a
 
       - name: Wait for song to be imported
