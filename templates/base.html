@@ -6,20 +6,19 @@
 <link rel=icon type=image/x-icon href=/static/hacky-day.png />
 <link rel=stylesheet type=text/css href=/static/index.css />
 
-<title>{% block title %}hack·star{% endblock %}</title>
+<title>hack·star {{ ' :: ' + page_title if page_title is defined else '' }}</title>
 {% block scripts %}{% endblock %}
 </head>
 <body>
 
-	<header{% block header_class %}{% endblock %}>
+	<header class=top>
 		<a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
-    {% block header_title %}{% endblock %}
+    {{ page_title if page_title is defined else 'hack·star' }}
 	</header>
 
-	<main{% block main_class %}{% endblock %}>
+	<main>
 		{% block content %}{% endblock %}
 	</main>
 
-{% block body_end %}{% endblock %}
 </body>
 </html>

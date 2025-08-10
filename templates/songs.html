@@ -1,6 +1,5 @@
+{% set page_title = 'Songs' %}
 {% extends "base.html" %}
-
-{% block title %}hack·star - Songs{% endblock %}
 
 {% block scripts %}
 <script>
@@ -113,10 +112,6 @@ function deleteSong(songId) {
 }
 </script>
 {% endblock %}
-
-{% block header_class %} class=top{% endblock %}
-
-{% block header_title %}Songs{% endblock %}
 
 {% block content %}
     <div id="songs-container">
