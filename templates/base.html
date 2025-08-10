@@ -9,14 +9,14 @@
 <script type=application/javascript src="{{ url_for('static', filename=script_url) }}"></script>
 {% endfor %}
 
-<title>hack·star {{ ' :: ' + page_title if page_title is defined else '' }}</title>
+<title>hack·star {{ ':: ' + page_title if page_title is defined else '' }}</title>
 {% block scripts %}{% endblock %}
 </head>
 <body>
 
-  <header class=top>
+  <header class={{ header_class | default('top') }}>
     <a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
-    {{ page_title if page_title is defined else 'hack·star' }}
+    <h1>{{ page_title | default('hack·star') }}</h1>
   </header>
 
   <main>
