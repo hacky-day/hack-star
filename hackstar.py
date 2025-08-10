@@ -104,104 +104,87 @@ async def shazam(audio_file):
 
 def apply_loudnorm_filter(input_file, output_file):
     """
-    Apply 2-pass loudnorm filter for audio normalization and compression.
+    Apply 2-pass loudnorm filter to audio file for professional normalization.
+    
+    Uses FFmpeg's loudnorm filter with EBU R128 standard:
+    - First pass: Analyze loudness with ffprobe
+    - Second pass: Apply normalization with measured values
     
     Args:
         input_file (str): Path to input audio file
         output_file (str): Path to output audio file
-    
-    Returns:
-        bool: True if processing succeeded, False otherwise
     """
-    try:
-        logger.info("Starting loudnorm processing for %s", input_file)
+    logger.info("Starting loudnorm processing for %s", input_file)
+    
+    # Convert to absolute paths to avoid path issues
+    abs_input = os.path.abspath(input_file)
+    abs_output = os.path.abspath(output_file)
+    
+    # First pass: Detect current loudness levels
+    ffprobe_command = [
+        "ffprobe",
+        "-f", "lavfi",
+        "-hide_banner",
+        "-i", f"amovie={abs_input},loudnorm=print_format=json[out]",
+        "-loglevel", "info"
+    ]
+    
+    logger.debug("Running first pass (loudness detection): %s", " ".join(ffprobe_command))
+    result = subprocess.run(
+        ffprobe_command,
+        text=True,
+        capture_output=True,
+        check=True
+    )
         
-        # Convert to absolute paths to avoid path issues
-        abs_input = os.path.abspath(input_file)
-        abs_output = os.path.abspath(output_file)
-        
-        # First pass: Detect current loudness levels
-        ffprobe_command = [
-            "ffprobe",
-            "-f", "lavfi",
-            "-hide_banner",
-            "-i", f"amovie={abs_input},loudnorm=print_format=json[out]",
-            "-loglevel", "info"
-        ]
-        
-        logger.debug("Running first pass (loudness detection): %s", " ".join(ffprobe_command))
-        result = subprocess.run(
-            ffprobe_command,
-            text=True,
-            capture_output=True
-        )
-        
-        if result.returncode != 0:
-            logger.error("First pass failed: %s", result.stderr)
-            return False
-            
-        # Extract JSON from stderr output (ffprobe outputs to stderr)
-        stderr_lines = result.stderr.split('\n')
-        json_start = -1
-        json_end = -1
-        
-        for i, line in enumerate(stderr_lines):
-            if line.strip() == '{':
-                json_start = i
-            elif line.strip() == '}' and json_start != -1:
-                json_end = i
-                break
-        
-        if json_start == -1 or json_end == -1:
-            logger.error("Could not find JSON output in ffprobe result")
-            return False
-        
-        json_str = '\n'.join(stderr_lines[json_start:json_end + 1])
-        
-        try:
-            loudness_data = json.loads(json_str)
-        except json.JSONDecodeError as e:
-            logger.error("Failed to parse loudness JSON: %s", e)
-            return False
-        
-        # Extract measured values
-        measured_i = loudness_data.get("input_i", "-16.00")
-        measured_tp = loudness_data.get("input_tp", "-1.50")
-        measured_lra = loudness_data.get("input_lra", "2.00")
-        measured_thresh = loudness_data.get("input_thresh", "-26.00")
-        
-        logger.info("Measured loudness values - I: %s, TP: %s, LRA: %s, Thresh: %s", 
-                   measured_i, measured_tp, measured_lra, measured_thresh)
-        
-        # Second pass: Apply loudnorm with measured values
-        ffmpeg_command = [
-            "ffmpeg",
-            "-i", abs_input,
-            "-filter:a", 
-            f"loudnorm=I=-16:LRA=2:tp=-1:measured_i={measured_i}:measured_tp={measured_tp}:measured_lra={measured_lra}:measured_thresh={measured_thresh}:print_format=summary",
-            "-c:a", "aac",
-            "-movflags", "faststart",
-            "-y",  # Overwrite output file
-            abs_output
-        ]
-        
-        logger.debug("Running second pass (loudnorm application): %s", " ".join(ffmpeg_command))
-        result = subprocess.run(
-            ffmpeg_command,
-            text=True,
-            capture_output=True
-        )
-        
-        if result.returncode != 0:
-            logger.error("Second pass failed: %s", result.stderr)
-            return False
-        
-        logger.info("Loudnorm processing completed successfully for %s", output_file)
-        return True
-        
-    except Exception as e:
-        logger.error("Error during loudnorm processing: %s", e)
-        return False
+    # Extract JSON from stderr output (ffprobe outputs to stderr)
+    stderr_lines = result.stderr.split('\n')
+    json_start = -1
+    json_end = -1
+    
+    for i, line in enumerate(stderr_lines):
+        if line.strip() == '{':
+            json_start = i
+        elif line.strip() == '}' and json_start != -1:
+            json_end = i
+            break
+    
+    if json_start == -1 or json_end == -1:
+        raise RuntimeError("Could not find JSON output in ffprobe result")
+    
+    json_str = '\n'.join(stderr_lines[json_start:json_end + 1])
+    loudness_data = json.loads(json_str)
+    
+    # Extract measured values
+    measured_i = loudness_data.get("input_i", "-16.00")
+    measured_tp = loudness_data.get("input_tp", "-1.50")
+    measured_lra = loudness_data.get("input_lra", "2.00")
+    measured_thresh = loudness_data.get("input_thresh", "-26.00")
+    
+    logger.info("Measured loudness values - I: %s, TP: %s, LRA: %s, Thresh: %s", 
+               measured_i, measured_tp, measured_lra, measured_thresh)
+    
+    # Second pass: Apply loudnorm with measured values
+    ffmpeg_command = [
+        "ffmpeg",
+        "-i", abs_input,
+        "-filter:a", 
+        f"loudnorm=I=-16:LRA=2:tp=-1:measured_i={measured_i}:measured_tp={measured_tp}:measured_lra={measured_lra}:measured_thresh={measured_thresh}:print_format=summary",
+        "-c:a", "aac",
+        "-movflags", "faststart",
+        "-y",  # Overwrite output file
+        abs_output
+    ]
+    
+    logger.debug("Running second pass (loudnorm application): %s", " ".join(ffmpeg_command))
+    subprocess.run(
+        ffmpeg_command,
+        text=True,
+        capture_output=True,
+        check=True
+    )
+    
+    logger.info("Loudnorm processing completed successfully for %s", output_file)
 
 
 def youtube_playlist_links(url):
@@ -270,15 +253,8 @@ def file_worker():
 
         # Apply loudnorm filter for audio normalization (2-pass processing)
         temp_output = f"{DATA_DIR}/{hex_id}_normalized.m4a"
-        if apply_loudnorm_filter(audio_file, temp_output):
-            # Replace original file with normalized version
-            os.replace(temp_output, audio_file)
-            logger.info("Audio normalization applied successfully")
-        else:
-            logger.warning("Audio normalization failed, keeping original file")
-            # Clean up temp file if it exists
-            if os.path.exists(temp_output):
-                os.remove(temp_output)
+        apply_loudnorm_filter(audio_file, temp_output)
+        os.replace(temp_output, audio_file)
 
         # Insert data in song create_table
         cur.execute(
@@ -357,15 +333,8 @@ def download_worker():
 
             # Apply loudnorm filter for audio normalization (2-pass processing)
             temp_output = f"{DATA_DIR}/{hex_id}_normalized.m4a"
-            if apply_loudnorm_filter(audio_file, temp_output):
-                # Replace original file with normalized version
-                os.replace(temp_output, audio_file)
-                logger.info("Audio normalization applied successfully")
-            else:
-                logger.warning("Audio normalization failed, keeping original file")
-                # Clean up temp file if it exists
-                if os.path.exists(temp_output):
-                    os.remove(temp_output)
+            apply_loudnorm_filter(audio_file, temp_output)
+            os.replace(temp_output, audio_file)
 
             # Insert data in song create_table
             cur.execute(

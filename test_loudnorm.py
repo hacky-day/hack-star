@@ -94,8 +94,10 @@ def test_loudnorm_integration():
         
         # Apply loudnorm
         logger.info("Applying loudnorm filter...")
-        if not apply_loudnorm_filter(input_file, output_file):
-            logger.error("Loudnorm processing failed")
+        try:
+            apply_loudnorm_filter(input_file, output_file)
+        except Exception as e:
+            logger.error(f"Loudnorm processing failed: {e}")
             return False
         
         # Verify output file exists
