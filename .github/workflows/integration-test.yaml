@@ -40,14 +40,14 @@ jobs:
         run: >
           curl -fsI http://127.0.0.1:8000/game
           | sed -n 's/^Location: *\(.*\)\r$/\1/p'
-          > game.id 
+          > game.id
 
       - name: Check for song page response
         run: >
           curl -fsI http://127.0.0.1:8000$(cat game.id)
-          | grep '200 OK' 
+          | grep '200 OK'
 
       - name: Check for end page response
         run: >
           curl -fsI http://127.0.0.1:8000$(cat game.id)
-          | grep 'Location: /static/end.html'
+          | grep 'Location: /end'

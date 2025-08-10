@@ -418,9 +418,11 @@ def delete_song(song_id):
     return "deleted"
 
 
-@app.route("/upload", methods=["GET"])
-def upload_page():
-    return render_template("upload.html")
+@app.route("/upload")
+@app.route("/end")
+def serve_template():
+    page = request.path.lstrip("/") + ".html"
+    return render_template(page)
 
 
 @app.route("/upload", methods=["POST"])
@@ -503,10 +505,9 @@ def next_song(game_id):
         limit 1""",
         (game_id,),
     )
-    # TODO: Handle no songs left
     songs = list(data)
     if not songs:
-        return redirect("/static/end.html", code=302)
+        return redirect("/end", code=302)
     song = songs[0]
     song_id, title, artist, release_date, cover = song
     hex_id = hex(song_id)[2:]
