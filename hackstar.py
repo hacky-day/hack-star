@@ -520,4 +520,4 @@ def next_song(game_id):
 
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    app.run(debug=True, port=8000)
