@@ -1,69 +1,33 @@
-﻿<!DOCTYPE html>
-<html lang=en>
-<head>
-<meta http-equiv=content-type content="text/html; charset=utf-8" />
-<meta name=viewport content="width=device-width, initial-scale=1">
-<link rel=icon type=image/x-icon href=/static/hacky-day.png />
-<link rel=stylesheet type=text/css href=/static/index.css />
+{% set scripts = ['player.js'] %}
+{% extends "base.html" %}
+{% block content %}
+<div id=play class=cover onclick='play()'>
+  ▶
+</div>
+<div id=questionmark class=cover onclick='reveal()'>
+  ?
+</div>
+<div id=coverart class=cover onclick='next()'>
+  <img src={{ cover }} alt='Cover' />
+</div>
+<div>
+  <audio controls>
+    <source src="/song/{{ song_id }}" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+</div>
 
-<title>hack·star</title>
-<script>
-function play() {
-  document.querySelector('audio').play();
-  document.getElementById('play').style.display = 'none';
-  document.getElementById('playbtn').style.display = 'none';
-  document.getElementById('questionmark').style.display = 'inline-flex';
-  document.getElementById('reveal').style.display = 'block';
-}
-function reveal() {
-  document.getElementById('questionmark').style.display = 'none';
-  document.getElementById('reveal').style.display = 'none';
-  document.getElementById('coverart').style.display = 'inline-flex';
-  document.getElementById('metadata').style.display = 'block';
-}
-function next() {
-  window.location.reload();
-}
-</script>
-</head>
-<body>
+<div id=playbtn>
+  <button onclick='play()'>Play →</button>
+</div>
+<div id=reveal>
+  <button onclick='reveal()'>Reveal →</button>
+</div>
+<div id=metadata>
+  <div id=release_date>{{ release_date }}</div>
+  <div id=title>{{ title }}</div>
+  <div id=artist>{{ artist }}</div>
 
-	<header class=top>
-		<a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
-    hack·star
-	</header>
-
-	<main>
-      <div id=play class=cover onclick='play()'>
-		  ▶
-      </div>
-      <div id=questionmark class=cover onclick='reveal()'>
-        ?
-      </div>
-      <div id=coverart class=cover onclick='next()'>
-        <img src={{ cover }} alt='Cover' />
-      </div>
-      <div>
-        <audio controls>
-          <source src="/song/{{ song_id }}" type="audio/mpeg">
-          Your browser does not support the audio element.
-        </audio>
-      </div>
-
-      <div id=playbtn>
-        <button onclick='play()'>Play →</button>
-      </div>
-      <div id=reveal>
-        <button onclick='reveal()'>Reveal →</button>
-      </div>
-      <div id=metadata>
-        <div id=release_date>{{ release_date }}</div>
-        <div id=title>{{ title }}</div>
-        <div id=artist>{{ artist }}</div>
-
-        <button onclick='next()'>Continue →</button>
-      </div>
-	</main>
-
-</body>
-</html>
+  <button onclick='next()'>Continue →</button>
+</div>
+{% endblock %}

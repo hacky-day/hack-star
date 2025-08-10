@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+<meta http-equiv=content-type content="text/html; charset=utf-8" />
+<meta name=viewport content="width=device-width, initial-scale=1">
+<link rel=icon type=image/x-icon href="{{ url_for('static', filename='hacky-day.png') }}" />
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='index.css') }}" />
+{% for script_url in (scripts if scripts is defined else []) %}
+<script type=application/javascript src="{{ url_for('static', filename=script_url) }}"></script>
+{% endfor %}
+
+<title>hack·star {{ ' :: ' + page_title if page_title is defined else '' }}</title>
+{% block scripts %}{% endblock %}
+</head>
+<body>
+
+  <header class=top>
+    <a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
+    {{ page_title if page_title is defined else 'hack·star' }}
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>

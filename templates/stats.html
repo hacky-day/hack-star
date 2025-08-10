@@ -1,50 +1,33 @@
-<!DOCTYPE html>
-<html lang=en>
-<head>
-<meta http-equiv=content-type content="text/html; charset=utf-8" />
-<meta name=viewport content="width=device-width, initial-scale=1">
-<link rel=icon type=image/x-icon href=/static/hacky-day.png />
-<link rel=stylesheet type=text/css href=/static/index.css />
+{% set page_title = 'Statistics' %}
+{% extends "base.html" %}
 
-<title>hack·star - Statistics</title>
-</head>
-<body>
-
-	<header class=top>
-		<a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
-    Statistics
-	</header>
-
-	<main>
-    <div id="stats-container">
-      <h2>Statistics</h2>
-      <div id="stats-content">
-        <div class="stat-item">
-          <span class="stat-label">Songs in database:</span>
-          <span class="stat-value">{{ songs_count }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Jobs processed:</span>
-          <span class="stat-value">{{ jobs.processed }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Jobs running:</span>
-          <span class="stat-value">{{ jobs.running }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Jobs failed:</span>
-          <span class="stat-value">{{ jobs.failed }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Jobs waiting:</span>
-          <span class="stat-value">{{ jobs.waiting }}</span>
-        </div>
-      </div>
+{% block content %}
+<div id="stats-container">
+  <h2>Statistics</h2>
+  <div id="stats-content">
+    <div class="stat-item">
+      <span class="stat-label">Songs in database:</span>
+      <span class="stat-value">{{ songs_count }}</span>
     </div>
+    <div class="stat-item">
+      <span class="stat-label">Jobs processed:</span>
+      <span class="stat-value">{{ jobs.processed }}</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Jobs running:</span>
+      <span class="stat-value">{{ jobs.running }}</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Jobs failed:</span>
+      <span class="stat-value">{{ jobs.failed }}</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Jobs waiting:</span>
+      <span class="stat-value">{{ jobs.waiting }}</span>
+    </div>
+  </div>
+</div>
 
-    <p><a href="/static/upload.html">← Back to Upload</a></p>
-    <p><a href="/songs">Manage Songs →</a></p>
-	</main>
-
-</body>
-</html>
+<p><a href="/static/upload.html">← Back to Upload</a></p>
+<p><a href="/songs">Manage Songs →</a></p>
+{% endblock %}
