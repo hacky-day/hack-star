@@ -14,10 +14,16 @@
 </head>
 <body>
 
+  {% if is_landing_page is defined and is_landing_page %}
+  <header>
+    <a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
+  </header>
+  {% else %}
   <header class=top>
     <a href=/><img src=/static/hacky-day.png alt='hacky·day' /></a>
     {{ page_title if page_title is defined else 'hack·star' }}
   </header>
+  {% endif %}
 
   <main>
     {% block content %}{% endblock %}

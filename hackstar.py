@@ -293,7 +293,7 @@ def close_connection(_):
 
 @app.route("/")
 def home():
-    return redirect("/static/index.html", code=302)
+    return render_template("index.html")
 
 
 @app.route("/stats")
