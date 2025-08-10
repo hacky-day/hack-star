@@ -418,6 +418,11 @@ def delete_song(song_id):
     return "deleted"
 
 
+@app.route("/upload", methods=["GET"])
+def upload_page():
+    return render_template("upload.html")
+
+
 @app.route("/upload", methods=["POST"])
 def upload():
     url = request.form.get("url")
@@ -462,7 +467,7 @@ def upload():
 
     cursor.close()
 
-    return redirect("/static/upload.html", code=302)
+    return redirect("/upload", code=302)
 
 
 @app.route("/song/<song_id>")
