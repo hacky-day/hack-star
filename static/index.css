@@ -164,11 +164,7 @@ div.cover img {
 }
 
 /* Upload page styling */
-main.upload {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-main.upload section {
+.upload section {
   background-color: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
@@ -177,13 +173,14 @@ main.upload section {
   text-align: left;
 }
 
-main.upload section input[type="url"], 
-main.upload section input[type="file"] {
+.upload section input[type="url"], 
+.upload section input[type="file"] {
   width: 90%;
   background-color: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: white;
   padding: 3px 10px;
+  margin: 10px 0;
 }
 
 .checkbox-label {
