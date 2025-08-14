@@ -23,5 +23,6 @@ WORKDIR /app
 RUN mkdir /app/data /app/db
 
 COPY --from=unzipper /ffmpeg-7.0.2-amd64-static/ffmpeg /usr/bin/ffmpeg
+COPY --from=unzipper /ffmpeg-7.0.2-amd64-static/ffprobe /usr/bin/ffprobe
 
 CMD [ "gunicorn", "--bind", "0.0.0.0:8000", "hackstar:app" ]

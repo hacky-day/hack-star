@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import multiprocessing
 import os
@@ -101,6 +102,91 @@ async def shazam(audio_file):
     return title, artist, release_date, cover
 
 
+def apply_loudnorm_filter(input_file, output_file):
+    """
+    Apply 2-pass loudnorm filter to audio file for professional normalization.
+    
+    Uses FFmpeg's loudnorm filter with EBU R128 standard:
+    - First pass: Analyze loudness with ffprobe
+    - Second pass: Apply normalization with measured values
+    
+    Args:
+        input_file (str): Path to input audio file
+        output_file (str): Path to output audio file
+    """
+    logger.info("Starting loudnorm processing for %s", input_file)
+    
+    # Convert to absolute paths to avoid path issues
+    abs_input = os.path.abspath(input_file)
+    abs_output = os.path.abspath(output_file)
+    
+    # First pass: Detect current loudness levels
+    ffprobe_command = [
+        "ffprobe",
+        "-f", "lavfi",
+        "-hide_banner",
+        "-i", f"amovie={abs_input},loudnorm=print_format=json[out]",
+        "-loglevel", "info"
+    ]
+    
+    logger.debug("Running first pass (loudness detection): %s", " ".join(ffprobe_command))
+    result = subprocess.run(
+        ffprobe_command,
+        text=True,
+        capture_output=True,
+        check=True
+    )
+        
+    # Extract JSON from stderr output (ffprobe outputs to stderr)
+    stderr_lines = result.stderr.split('\n')
+    json_start = -1
+    json_end = -1
+    
+    for i, line in enumerate(stderr_lines):
+        if line.strip() == '{':
+            json_start = i
+        elif line.strip() == '}' and json_start != -1:
+            json_end = i
+            break
+    
+    if json_start == -1 or json_end == -1:
+        raise RuntimeError("Could not find JSON output in ffprobe result")
+    
+    json_str = '\n'.join(stderr_lines[json_start:json_end + 1])
+    loudness_data = json.loads(json_str)
+    
+    # Extract measured values
+    measured_i = loudness_data.get("input_i", "-16.00")
+    measured_tp = loudness_data.get("input_tp", "-1.50")
+    measured_lra = loudness_data.get("input_lra", "2.00")
+    measured_thresh = loudness_data.get("input_thresh", "-26.00")
+    
+    logger.info("Measured loudness values - I: %s, TP: %s, LRA: %s, Thresh: %s", 
+               measured_i, measured_tp, measured_lra, measured_thresh)
+    
+    # Second pass: Apply loudnorm with measured values
+    ffmpeg_command = [
+        "ffmpeg",
+        "-i", abs_input,
+        "-filter:a", 
+        f"loudnorm=I=-16:LRA=2:tp=-1:measured_i={measured_i}:measured_tp={measured_tp}:measured_lra={measured_lra}:measured_thresh={measured_thresh}:print_format=summary",
+        "-c:a", "aac",
+        "-movflags", "faststart",
+        "-y",  # Overwrite output file
+        abs_output
+    ]
+    
+    logger.debug("Running second pass (loudnorm application): %s", " ".join(ffmpeg_command))
+    subprocess.run(
+        ffmpeg_command,
+        text=True,
+        capture_output=True,
+        check=True
+    )
+    
+    logger.info("Loudnorm processing completed successfully for %s", output_file)
+
+
 def youtube_playlist_links(url):
     ydl_opts = {
         "extract_flat": "in_playlist",  # Extract video URLs only
@@ -164,6 +250,11 @@ def file_worker():
         audio_file = f"{DATA_DIR}/{hex_id}.m4a"
         title, artist, release_date, cover = asyncio.run(shazam(audio_file))
         logger.info("Shazam result: %s by %s (%s)", title, artist, release_date)
+
+        # Apply loudnorm filter for audio normalization (2-pass processing)
+        temp_output = f"{DATA_DIR}/{hex_id}_normalized.m4a"
+        apply_loudnorm_filter(audio_file, temp_output)
+        os.replace(temp_output, audio_file)
 
         # Insert data in song create_table
         cur.execute(
@@ -239,6 +330,11 @@ def download_worker():
             audio_file = f"{DATA_DIR}/{hex_id}.m4a"
             title, artist, release_date, cover = asyncio.run(shazam(audio_file))
             logger.info("Shazam result: %s by %s (%s)", title, artist, release_date)
+
+            # Apply loudnorm filter for audio normalization (2-pass processing)
+            temp_output = f"{DATA_DIR}/{hex_id}_normalized.m4a"
+            apply_loudnorm_filter(audio_file, temp_output)
+            os.replace(temp_output, audio_file)
 
             # Insert data in song create_table
             cur.execute(
